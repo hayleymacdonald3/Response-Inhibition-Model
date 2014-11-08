@@ -150,3 +150,5 @@ exp_MEPs_100 = load_exp_data(fname100)
 
 if __name__ == "__main__":  
     optobj = opt.minimize(error_function, [0.06, 0.4, 0.1, 2], args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+
+# add in parameter for inhibition on Go trials
