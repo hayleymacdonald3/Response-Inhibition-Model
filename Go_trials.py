@@ -34,6 +34,13 @@ def get_fac(t, params):
     idx = (t + pre_t) >= 0
     res[idx] = fac[idx]
     return res
+    
+def get_inhib_tonic(t, params):
+    '''
+    '''
+    inhib = np.zeros(t.shape)
+    inhib[:] = 1 # Currently set, but will need to optomize
+    return inhib
         
 def get_trials(params, n_rep=10000):
     '''
@@ -54,7 +61,7 @@ def get_trials(params, n_rep=10000):
             sequence of time index
     '''
     k_facGo, pre_t_mean, pre_t_sd, tau_facGo = params 
-    t = np.linspace(-.4, .2, 600, endpoint=False)  # How does this work if pre_t not optimized at -4?
+    t = np.linspace(-.4, .2, 600, endpoint=False)  
 #    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.random.normal(pre_t_mean, pre_t_sd, size=n_rep) # generates n_rep random numbers from a normal distribution of mean, sd that given into function
     fac_i = np.zeros((n_rep, t.size))  # sets up empty array of zeros for all simulated trials
@@ -83,6 +90,11 @@ def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
     idx100 = np.flatnonzero(np.isclose(t, pts[2]))
     vals100 = fac_i[:,idx100]
     return (vals150, vals125, vals100)  # is this causing the error?
+    
+def get_emg_onsets(t,fac_i, inhib):
+    idx = np.flatnonzero(np.isclose(fac_i, inhib))
+    sim_curve_intersections = t[idx,:]
+    
     
 def get_chisquare(obs_data, obs_model, nbins=3):
     '''
@@ -118,9 +130,11 @@ def load_exp_data(fname):
 
 def error_function(params, data150, data125, data100):  #
 #    data150, data125, data100 = data 
-    print "Trying with values: " + str(params)
+    print "Trying with values: " + str(params) # will need to add inhib parameter
     fac_i, t = get_trials(params)  # n_rep=data.size
     pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)
+    inhib = get_inhib_tonic(t,params)
+    # get predicted emg onsets here
     X2_150 = get_chisquare(data150, pred150, nbins=2)[0]
     print "X2_150: ", X2_150
     X2_125 = get_chisquare(data125, pred125, nbins=2)[0]
@@ -139,16 +153,22 @@ def visualize_params(params, data):
     plt.plot(np.ones_like(data125) * -0.125, data125, 'rx')
     plt.plot(np.ones_like(data100) * -0.100, data100, 'rx')
     
+
 data_dir = 'C:\Users\Hayley\Documents\University\PhD\PhD\Modeling\Experimental data for model'
 fname150 = data_dir + '\Go_trial_MEP_amplitudes_150ms.csv'
 fname125 = data_dir + '\Go_trial_MEP_amplitudes_125ms.csv'
 fname100 = data_dir + '\Go_trial_MEP_amplitudes_100ms.csv'
+fnameGoThreeStimOnly = data_dir + '\EMG onsets_only 3 stim times.csv'
 exp_MEPs_150 = load_exp_data(fname150)
 exp_MEPs_125 = load_exp_data(fname125)
 exp_MEPs_100 = load_exp_data(fname100)
-#exp_data_all_points = (exp_MEPs_150, exp_MEPs_125, exp_MEPs_100)
+exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset
 
+# optomizing parameters for Go trial facilitation curve
 if __name__ == "__main__":  
     optobj = opt.minimize(error_function, [0.06, 0.4, 0.1, 2], args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    return params # Want to return the optomized parameters... check this is what I'm doing!!!
+
 
 # add in parameter for inhibition on Go trials
+
