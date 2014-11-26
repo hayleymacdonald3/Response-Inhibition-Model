@@ -37,18 +37,32 @@ def get_fac(t, params):
     
 def get_inhib_tonic(t, params):
     '''
+    Generates a single horizontal line for tonic inhibition
+    
+    Parameters
+    --------------
+    t : array
+        sequence of time index
+    params : sequence (5,) of float
+        inhib - height of inhibition line
+        
+    Returns
+    ----------
+    inhib_tonic : array
+        array of same size as time index with constant inhibion value    
     '''
-    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic = params
-    inhib_tonic = t.shape
+    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib = params
+    inhib_tonic = np.ones(t.shape) * inhib
     return inhib_tonic
-    #inhib[:] = 1 # Currently set, but will need to optomize    
+    #inhib[:] = 1 # Currently set, but will need to optomize 
+    
 def get_trials(params, n_rep=10000):
     '''
     Generates n_rep number of facilitation curves for Go response for all simulated trials required
     
     Parameters
     -------------
-    params : sequence (3,) of float
+    params : sequence (4,) of float
         k_facGo - scale of fac curve
         pre_t_mean - average start time before target presentation
         pre_t_sd - standard deviation of start time before target
@@ -60,7 +74,7 @@ def get_trials(params, n_rep=10000):
         t : array
             sequence of time index
     '''
-    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic = params 
+    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib = params 
     t = np.linspace(-.4, .2, 600, endpoint=False)  
 #    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.random.normal(pre_t_mean, pre_t_sd, size=n_rep) # generates n_rep random numbers from a normal distribution of mean, sd that given into function
@@ -92,6 +106,8 @@ def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
     return (vals150, vals125, vals100)  
     
 def get_emg_onsets(t, fac_i, inhib):
+    '''
+    '''
     getinhib = fac_i < inhib
     switches = np.diff(getinhib)
     index_trials = np.nonzero(switches == 1)
@@ -118,7 +134,7 @@ def get_chisquare(obs_data, obs_model, nbins=3):
     percentile_bins = np.linspace(0, 100, nbins + 1)    
     bin_edges = np.percentile(obs_data, list(percentile_bins))
     hist_data, bin_edges  = np.histogram(obs_data,  bins=bin_edges)
-    hist_data = hist_data / float(obs_data.size)
+    hist_data = hist_data / float(obs_data.size) # still presents frequencies proportional to number of observations? - check with Angus 
     # put in density so that value for each bin is expressed as proportion of total number of observations
     hist_model, bin_edges = np.histogram(obs_model, bins=bin_edges)
     hist_model = hist_model / float(obs_model.size)
@@ -130,11 +146,10 @@ def load_exp_data(fname):
     no_nan_MEP_amps_mV = MEP_amps_mV[~np.isnan(MEP_amps_mV)] # Creates array of True False for whether is NaN - then indexes out of MEP_amps_mV array only with corresponding returned True
     return no_nan_MEP_amps_mV
 
-def error_function(params, data150, data125, data100, data_onsets):  #
-#    data150, data125, data100 = data 
-    print "Trying with values: " + str(params) # will need to add inhib parameter
-    fac_i, t = get_trials(params)  # n_rep=data.size
-    inhib_tonic = get_inhib_tonic(t, params) # final param is now inhib.............................
+def error_function(params, data150, data125, data100, data_onsets):  
+    print "Trying with values: " + str(params) 
+    fac_i, t = get_trials(params)  
+    inhib_tonic = get_inhib_tonic(t, params) # final/fifth param is now inhib
     pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)    
     pred_onsets = get_emg_onsets(t, fac_i, inhib_tonic) 
     X2_onsets = get_chisquare(data_onsets, pred_onsets, nbins=2)[0]
@@ -147,7 +162,7 @@ def error_function(params, data150, data125, data100, data_onsets):  #
     print "X2_100: ", X2_100
     X2_summed = X2_150 + X2_125 + X2_100 + X2_onsets
     print "X2 summed: ", X2_summed
-    return X2_summed # (X2_150, X2_125, X2_100)
+    return X2_summed 
 
 def visualize_params(params, data):
     data150, data125, data100 = data
@@ -170,9 +185,5 @@ exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) # # Uses same lo
 
 # optomizing parameters for Go trial facilitation curve
 if __name__ == "__main__":  
-    optobj = opt.minimize(error_function, [0.06, 0.4, 0.1, 2, 1], args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    optobj = opt.minimize(error_function, [0.06, 0.4, 0.1, 2, 2], args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
     
-
-
-# add in parameter for inhibition on Go trials
-
