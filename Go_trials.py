@@ -111,8 +111,7 @@ def get_emg_onsets(t, fac_i, inhib):
     getinhib = fac_i < inhib
     switches = np.diff(getinhib)
     index_trials = np.nonzero(switches == 1)
-    return index_trials[1]
-    
+    return t[index_trials[1]]
     
 def get_chisquare(obs_data, obs_model, nbins=3):
     '''
@@ -181,9 +180,10 @@ fnameGoThreeStimOnly = data_dir + '\EMG onsets_only 3 stim times.csv'
 exp_MEPs_150 = load_exp_data(fname150)
 exp_MEPs_125 = load_exp_data(fname125)
 exp_MEPs_100 = load_exp_data(fname100)
-exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset
+exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset
 
 # optomizing parameters for Go trial facilitation curve
-if __name__ == "__main__":  
-    optobj = opt.minimize(error_function, [0.06, 0.4, 0.1, 2, 2], args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+if __name__ == "__main__":
+    params0 = [0.06, 0.4, 0.1, 2, 1]
+    optobj = opt.minimize(error_function, params0, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
     
