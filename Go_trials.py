@@ -9,6 +9,7 @@ import numpy as np
 from scipy import stats
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
+import pdb #pdb.set_trace() where want to set breakpoint and have debugging ability
 
 def get_fac(t, params):
     '''
@@ -52,8 +53,8 @@ def get_inhib_tonic(t, params):
         array of same size as time index with constant inhibion value    
     '''
     k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib = params
-    inhib_tonic = np.ones(t.shape) * inhib
-    return inhib_tonic
+    inhib_tonic = np.ones(t.shape) * inhib # creates an array the same size as t, setting each element to 1, then multiplying by what value of inhib is being testing by error function
+    return inhib_tonic # returns array of 600 x inhib value as horizontal line for tonic inhib
     #inhib[:] = 1 # Currently set, but will need to optomize 
     
 def get_trials(params, n_rep=10000):
@@ -108,10 +109,10 @@ def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
 def get_emg_onsets(t, fac_i, inhib):
     '''
     '''
-    getinhib = fac_i < inhib
-    switches = np.diff(getinhib)
-    index_trials = np.nonzero(switches == 1)
-    return t[index_trials[1]]
+    getinhib = fac_i < inhib # for each curve, finds if true or false that value for fac_i is less than value for inhib
+    switches = np.diff(getinhib) # diff function minuses each element from the previous one
+    index_trials = np.nonzero(switches == 1) # finds indexes of all cases when values change from fac_i being below to above inhib value i.e. when curve crossing horizontal line
+    return t[index_trials[1]] # finds actual time value at those indexes of curve intersection points
     
 def get_chisquare(obs_data, obs_model, nbins=3):
     '''
