@@ -11,6 +11,7 @@ import scipy.optimize as opt
 import matplotlib.pyplot as plt
 import pdb #pdb.set_trace() where want to set breakpoint and have debugging ability
 
+#%%
 def get_fac(t, params):
     '''
     Generates a facilitation curve
@@ -36,6 +37,7 @@ def get_fac(t, params):
     res[idx] = fac[idx]
     return res
     
+#%%    
 def get_inhib_tonic(t, params):
     '''
     Generates a single horizontal line for tonic inhibition
@@ -55,8 +57,22 @@ def get_inhib_tonic(t, params):
     k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib = params
     inhib_tonic = np.ones(t.shape) * inhib # creates an array the same size as t, setting each element to 1, then multiplying by what value of inhib is being testing by error function
     return inhib_tonic # returns array of 600 x inhib value as horizontal line for tonic inhib
-    #inhib[:] = 1 # Currently set, but will need to optomize 
     
+#%%    
+def get_inhib_increase(t, inhib_tonic, params_GS, n_rep=10000):
+    '''
+    '''
+    amp_inhib, k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS # step_t in this case refers to shifting along x axis where step input to tonic inhibition occurs
+    threshold = np.zeros_like(t)    
+    step_t = np.random.normal(step_t_mean, step_t_sd) # size=n_rep
+    inhib = (amp_inhib/k_inhib) * (1 - np.exp(-t/tau_inhib)) + inhib_tonic # need to do something about pre-t to correct offset??????????
+#    start = inhib >= 0
+#    inhib = inhib[start]
+    threshold[:step_t] = inhib_tonic[:step_t]
+    threshold[step_t:] = inhib_tonic[step_t:] + inhib[:-step_t]
+    return threshold
+
+#%%
 def get_trials(params, n_rep=10000):
     '''
     Generates n_rep number of facilitation curves for Go response for all simulated trials required
@@ -84,7 +100,8 @@ def get_trials(params, n_rep=10000):
         myparams = k_facGo, tau_facGo, pre_t[i]  # takes parameters passed into model plus pre_t number randomly generated for that simulated trial
         fac_i[i] = get_fac(t, myparams)  # generates curve for that simulated trial
     return fac_i, t
-    
+
+#%%    
 def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
     '''
     Gets values at pre-defined time points on all simulated fac curves
@@ -105,7 +122,8 @@ def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
     idx100 = np.flatnonzero(np.isclose(t, pts[2]))
     vals100 = fac_i[:,idx100]
     return (vals150, vals125, vals100)  
-    
+
+#%%    
 def get_emg_onsets(t, fac_i, inhib):
     '''
     '''
@@ -113,7 +131,8 @@ def get_emg_onsets(t, fac_i, inhib):
     switches = np.diff(getinhib) # diff function minuses each element from the previous one
     index_trials = np.nonzero(switches == 1) # finds indexes of all cases when values change from fac_i being below to above inhib value i.e. when curve crossing horizontal line
     return t[index_trials[1]] # finds actual time value at those indexes of curve intersection points
-    
+
+#%%    
 def get_chisquare(obs_data, obs_model, nbins=3):
     '''
     Sends into function actual MEP amplitude data at each time point, predicted
@@ -140,12 +159,14 @@ def get_chisquare(obs_data, obs_model, nbins=3):
     hist_model = hist_model / float(obs_model.size)
     return stats.chisquare(hist_data, hist_model)
 
+#%%
 def load_exp_data(fname):
     file_contents = np.genfromtxt(fname, dtype=float, delimiter=",", skiprows=1)  # loads the csv file as a float, skipping the first row as only subject codes
     MEP_amps_mV  = file_contents.flatten()
     no_nan_MEP_amps_mV = MEP_amps_mV[~np.isnan(MEP_amps_mV)] # Creates array of True False for whether is NaN - then indexes out of MEP_amps_mV array only with corresponding returned True
     return no_nan_MEP_amps_mV
 
+#%%
 def error_function(params, data150, data125, data100, data_onsets):  
     print "Trying with values: " + str(params) 
     fac_i, t = get_trials(params)  
@@ -164,6 +185,7 @@ def error_function(params, data150, data125, data100, data_onsets):
     print "X2 summed: ", X2_summed
     return X2_summed 
 
+#%%
 def visualize_params(params, data):
     data150, data125, data100 = data
     fac_i, t = get_trials(params)
@@ -172,17 +194,32 @@ def visualize_params(params, data):
     plt.plot(np.ones_like(data125) * -0.125, data125, 'rx')
     plt.plot(np.ones_like(data100) * -0.100, data100, 'rx')
     
-
+#%%
+    # Load data
 data_dir = 'C:\Users\Hayley\Documents\University\PhD\PhD\Modeling\Experimental data for model'
+
+# Loading experimental data for Go trials 
+# MEP data
 fname150 = data_dir + '\Go_trial_MEP_amplitudes_150ms.csv'
 fname125 = data_dir + '\Go_trial_MEP_amplitudes_125ms.csv'
 fname100 = data_dir + '\Go_trial_MEP_amplitudes_100ms.csv'
-fnameGoThreeStimOnly = data_dir + '\EMG onsets_only 3 stim times.csv'
 exp_MEPs_150 = load_exp_data(fname150)
 exp_MEPs_125 = load_exp_data(fname125)
 exp_MEPs_100 = load_exp_data(fname100)
-exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset
+# EMG onsets
+fnameGoThreeStimOnly = data_dir + '\EMG onsets_only 3 stim times.csv'
+exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset. /1000 to put into sectonds, -0.8 to set relative to target line at 0ms
 
+# Loading experimental data for Go Left - Stop Right (GS) trials 
+# MEP data
+fnameGS75 = data_dir + '\MEP data_GS trials_75ms.csv'
+fnameGS50 = data_dir + '\MEP data_GS trials_50ms.csv'
+fnameGS25 = data_dir + '\MEP data_GS trials_25ms.csv'
+exp_GS_MEPs_75 = load_exp_data(fnameGS75)
+exp_GS_MEPs_50 = load_exp_data(fnameGS50)
+exp_GS_MEPs_25 = load_exp_data(fnameGS25)
+
+#%%
 # optomizing parameters for Go trial facilitation curve
 if __name__ == "__main__":
     params0 = [0.06, 0.4, 0.1, 2, 1]
