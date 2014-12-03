@@ -59,8 +59,16 @@ def get_inhib_tonic(t, params):
     return inhib_tonic # returns array of 600 x inhib value as horizontal line for tonic inhib
     
 #%%    
-def get_inhib_increase(t, inhib_tonic, params_GS, n_rep=10000):
+def get_inhib_increase(t, inhib_tonic, params_GS):
     '''
+    initial model had following parameters:
+    amp_inhib = 1.555
+    k_inhib = 1.2 
+    tau_inhib = 0.8
+    
+    Now adding:
+    step_t_mean
+    step_t_sd
     '''
     amp_inhib, k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS # step_t in this case refers to shifting along x axis where step input to tonic inhibition occurs
     threshold = np.zeros_like(t)    
@@ -101,7 +109,17 @@ def get_trials(params, n_rep=10000):
         fac_i[i] = get_fac(t, myparams)  # generates curve for that simulated trial
     return fac_i, t
 
-#%%    
+#%% 
+def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=10000):
+    '''
+    '''
+    amp_inhib, k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS
+    thresholds = np.zeros((n_rep, t.size))
+    for i in range(n_rep):
+        thresholds[i] = get_inhib_increase(t, inhib_tonic, params_GS)
+    return thresholds
+
+#%%   
 def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
     '''
     Gets values at pre-defined time points on all simulated fac curves
@@ -132,7 +150,17 @@ def get_emg_onsets(t, fac_i, inhib):
     index_trials = np.nonzero(switches == 1) # finds indexes of all cases when values change from fac_i being below to above inhib value i.e. when curve crossing horizontal line
     return t[index_trials[1]] # finds actual time value at those indexes of curve intersection points
 
-#%%    
+#%%  
+def get_GS_tms_vals(t, go_curves, inhib_level, pts=(-0.075, -0.05, -0.025)):
+    '''
+    '''
+    index75 = np.flatnonzero(np.isclose(t, pts[0]))
+    fac_values75 = go_curves[:, index75]
+    inhib_values75 = inhib_level[:, index75]
+    
+    return pred75, pred50, pred25 
+    
+#%%
 def get_chisquare(obs_data, obs_model, nbins=3):
     '''
     Sends into function actual MEP amplitude data at each time point, predicted
@@ -167,7 +195,7 @@ def load_exp_data(fname):
     return no_nan_MEP_amps_mV
 
 #%%
-def error_function(params, data150, data125, data100, data_onsets):  
+def error_function_Go(params, data150, data125, data100, data_onsets):  
     print "Trying with values: " + str(params) 
     fac_i, t = get_trials(params)  
     inhib_tonic = get_inhib_tonic(t, params) # final/fifth param is now inhib
@@ -183,9 +211,19 @@ def error_function(params, data150, data125, data100, data_onsets):
     print "X2_100: ", X2_100
     X2_summed = X2_150 + X2_125 + X2_100 + X2_onsets
     print "X2 summed: ", X2_summed
-    return X2_summed 
+    return X2_summed
+     
 
 #%%
+def error_function_GS(params_GS, params_Go, data75, data50, data25): # can I pass it two lots of parameter lists?
+    print "Trying with values: " + str(params_GS)
+    fac_i = get_trials(params_Go) # generate baseline Go fac curves from parameters already optomized
+    activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS)
+    pred75, pred50, pred25 = get_GS_tms_vals(t, fac_i, activation_thresholds)
+    
+    
+#%%    
+    
 def visualize_params(params, data):
     data150, data125, data100 = data
     fac_i, t = get_trials(params)
@@ -220,8 +258,11 @@ exp_GS_MEPs_50 = load_exp_data(fnameGS50)
 exp_GS_MEPs_25 = load_exp_data(fnameGS25)
 
 #%%
-# optomizing parameters for Go trial facilitation curve
+# optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
     params0 = [0.06, 0.4, 0.1, 2, 1]
-    optobj = opt.minimize(error_function, params0, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    optGo = opt.minimize(error_function_Go, params0, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    return params0
     
+# optomizing parameters for GS trial activation threshold and single-component facilitation curve
+optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
