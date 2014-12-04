@@ -61,24 +61,14 @@ def get_inhib_tonic(t, params):
 #%%    
 def get_inhib_increase(t, inhib_tonic, params_GS):
     '''
-    initial model had following parameters:
-    amp_inhib = 1.555
-    k_inhib = 1.2 
-    tau_inhib = 0.8
     
-    Now adding:
-    step_t_mean
-    step_t_sd
     '''
-    amp_inhib, k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS # step_t in this case refers to shifting along x axis where step input to tonic inhibition occurs
+    k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS # step_t in this case refers to shifting along x axis where step input to tonic inhibition occurs
     threshold = np.zeros_like(t)    
     step_t = np.random.normal(step_t_mean, step_t_sd) # size=n_rep
-    inhib = (amp_inhib/k_inhib) * (1 - np.exp(-t/tau_inhib)) + inhib_tonic # need to do something about pre-t to correct offset??????????
-#    start = inhib >= 0
-#    inhib = inhib[start]
-    threshold[:step_t] = inhib_tonic[:step_t]
-    threshold[step_t:] = inhib_tonic[step_t:] + inhib[:-step_t]
-    return threshold
+    inhib = k_inhib * (1 - np.exp(-(t+step_t)/tau_inhib)) + inhib_tonic # by adding t + step_t, now only plotting inhib after intercept at zero
+    inhib = np.maximum(inhib, inhib_tonic) # uses whichever value is greater from inhib or inhib_tonic - only shows the part of inhib curve that adds to tonic level after intercepted tonic value
+    return inhib
 
 #%%
 def get_trials(params, n_rep=10000):
@@ -103,7 +93,7 @@ def get_trials(params, n_rep=10000):
     t = np.linspace(-.4, .2, 600, endpoint=False)  
 #    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.random.normal(pre_t_mean, pre_t_sd, size=n_rep) # generates n_rep random numbers from a normal distribution of mean, sd that given into function
-    fac_i = np.zeros((n_rep, t.size))  # sets up empty array of zeros for all simulated trials
+    fac_i, t = np.zeros((n_rep, t.size))  # sets up empty array of zeros for all simulated trials
     for i in range(n_rep):  # for each simulated trial
         myparams = k_facGo, tau_facGo, pre_t[i]  # takes parameters passed into model plus pre_t number randomly generated for that simulated trial
         fac_i[i] = get_fac(t, myparams)  # generates curve for that simulated trial
@@ -113,7 +103,7 @@ def get_trials(params, n_rep=10000):
 def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=10000):
     '''
     '''
-    amp_inhib, k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS
+    k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS
     thresholds = np.zeros((n_rep, t.size))
     for i in range(n_rep):
         thresholds[i] = get_inhib_increase(t, inhib_tonic, params_GS)
@@ -133,6 +123,7 @@ def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
     -------------
     vals : value on all simulated curves at time point requested
     '''
+    #pdb.set_trace()
     idx150 = np.flatnonzero(np.isclose(t, pts[0]))
     vals150 = fac_i[:,idx150]
     idx125 = np.flatnonzero(np.isclose(t, pts[1]))
@@ -151,13 +142,26 @@ def get_emg_onsets(t, fac_i, inhib):
     return t[index_trials[1]] # finds actual time value at those indexes of curve intersection points
 
 #%%  
-def get_GS_tms_vals(t, go_curves, inhib_level, pts=(-0.075, -0.05, -0.025)):
+def get_GS_tms_vals(t, go_curves, inhib_step, inhib_tonic, pts=(-0.075, -0.05, -0.025)):
     '''
+    inhib_level:
+    is activation threshold with step increase to tonic inhibition level
     '''
     index75 = np.flatnonzero(np.isclose(t, pts[0]))
-    fac_values75 = go_curves[:, index75]
-    inhib_values75 = inhib_level[:, index75]
-    
+#    fac_values75 = go_curves[:, index75]
+#    inhib_step_values75 = inhib_level[:, index75]
+#    diff_inhib75 = inhib_step_values75 - inhib_tonic
+    pred75 = go_curves[:, index75] - (inhib_step[:, index75] - inhib_tonic[:, index75]) #diff_inhib75
+    index50 = np.flatnonzero(np.isclose(t, pts[1]))
+    fac_values50 = go_curves[:, index50]
+    inhib_step_values50 = inhib_step[:, index50]
+    diff_inhib50 = inhib_step_values50 - inhib_tonic
+    pred50 = fac_values50 - diff_inhib50
+    index25 = np.flatnonzero(np.isclose(t, pts[2]))
+    fac_values25 = go_curves[:, index25]
+    inhib_step_values25 = inhib_step[:, index25]
+    diff_inhib25 = inhib_step_values25 - inhib_tonic
+    pred25 = fac_values25 - diff_inhib25    
     return pred75, pred50, pred25 
     
 #%%
@@ -218,8 +222,8 @@ def error_function_Go(params, data150, data125, data100, data_onsets):
 def error_function_GS(params_GS, params_Go, data75, data50, data25): # can I pass it two lots of parameter lists?
     print "Trying with values: " + str(params_GS)
     fac_i = get_trials(params_Go) # generate baseline Go fac curves from parameters already optomized
-    activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS)
-    pred75, pred50, pred25 = get_GS_tms_vals(t, fac_i, activation_thresholds)
+    activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS) # generates activation threshold with step increase to tonic inhib level
+    pred75, pred50, pred25 = get_GS_tms_vals(t, fac_i, activation_thresholds, inhib_tonic)
     
     
 #%%    
@@ -260,7 +264,7 @@ exp_GS_MEPs_25 = load_exp_data(fnameGS25)
 #%%
 # optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
-    params0 = [0.06, 0.4, 0.1, 2, 1]
+    params0 = [0.06, 0.4, 0.1, 2, 1] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic
     optGo = opt.minimize(error_function_Go, params0, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
     return params0
     
