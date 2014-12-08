@@ -93,7 +93,7 @@ def get_trials(params, n_rep=10000):
     t = np.linspace(-.4, .2, 600, endpoint=False)  
 #    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.random.normal(pre_t_mean, pre_t_sd, size=n_rep) # generates n_rep random numbers from a normal distribution of mean, sd that given into function
-    fac_i, t = np.zeros((n_rep, t.size))  # sets up empty array of zeros for all simulated trials
+    fac_i = np.zeros((n_rep, t.size))  # had to change from fac_i, t - why does this cause error now?!?! sets up empty array of zeros for all simulated trials
     for i in range(n_rep):  # for each simulated trial
         myparams = k_facGo, tau_facGo, pre_t[i]  # takes parameters passed into model plus pre_t number randomly generated for that simulated trial
         fac_i[i] = get_fac(t, myparams)  # generates curve for that simulated trial
@@ -144,14 +144,15 @@ def get_emg_onsets(t, fac_i, inhib):
 #%%  
 def get_GS_tms_vals(t, go_curves, inhib_step, inhib_tonic, pts=(-0.075, -0.05, -0.025)):
     '''
-    inhib_level:
+    inhib_step:
     is activation threshold with step increase to tonic inhibition level
     '''
     index75 = np.flatnonzero(np.isclose(t, pts[0]))
-#    fac_values75 = go_curves[:, index75]
-#    inhib_step_values75 = inhib_level[:, index75]
-#    diff_inhib75 = inhib_step_values75 - inhib_tonic
-    pred75 = go_curves[:, index75] - (inhib_step[:, index75] - inhib_tonic[:, index75]) #diff_inhib75
+    fac_values75 = go_curves[:, index75]
+    inhib_step_values75 = inhib_step[:, index75]
+    #pdb.set_trace()
+    diff_inhib75 = inhib_step_values75 - inhib_tonic # inhib_tonic is single value for level of inhib
+    pred75 = fac_values75 - diff_inhib75 #go_curves[:, index75] - (inhib_step[:, index75] - inhib_tonic[:, index75]) #diff_inhib75
     index50 = np.flatnonzero(np.isclose(t, pts[1]))
     fac_values50 = go_curves[:, index50]
     inhib_step_values50 = inhib_step[:, index50]
@@ -162,7 +163,7 @@ def get_GS_tms_vals(t, go_curves, inhib_step, inhib_tonic, pts=(-0.075, -0.05, -
     inhib_step_values25 = inhib_step[:, index25]
     diff_inhib25 = inhib_step_values25 - inhib_tonic
     pred25 = fac_values25 - diff_inhib25    
-    return pred75, pred50, pred25 
+    return pred75, pred50, pred25
     
 #%%
 def get_chisquare(obs_data, obs_model, nbins=3):
@@ -221,10 +222,12 @@ def error_function_Go(params, data150, data125, data100, data_onsets):
 #%%
 def error_function_GS(params_GS, params_Go, data75, data50, data25): # can I pass it two lots of parameter lists?
     print "Trying with values: " + str(params_GS)
-    fac_i = get_trials(params_Go) # generate baseline Go fac curves from parameters already optomized
+    fac_i, t = get_trials(params_Go) # generate baseline Go fac curves from parameters already optomized
     activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS) # generates activation threshold with step increase to tonic inhib level
-    pred75, pred50, pred25 = get_GS_tms_vals(t, fac_i, activation_thresholds, inhib_tonic)
-    
+    pred75, pred50, pred25 = get_GS_tms_vals(t, fac_i, activation_thresholds, params_Go[4])
+    X2_75 = get_chisquare(data75, pred75, nbins=2)[0]
+    print "X2_75: ", X2_75
+    return X2_75
     
 #%%    
     
@@ -249,7 +252,7 @@ exp_MEPs_150 = load_exp_data(fname150)
 exp_MEPs_125 = load_exp_data(fname125)
 exp_MEPs_100 = load_exp_data(fname100)
 # EMG onsets
-fnameGoThreeStimOnly = data_dir + '\EMG onsets_only 3 stim times.csv'
+fnameGoThreeStimOnly = data_dir + '\Go_EMG onsets_only 3 stim times.csv'
 exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset. /1000 to put into sectonds, -0.8 to set relative to target line at 0ms
 
 # Loading experimental data for Go Left - Stop Right (GS) trials 
