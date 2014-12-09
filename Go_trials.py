@@ -214,20 +214,27 @@ def error_function_Go(params, data150, data125, data100, data_onsets):
     print "X2_125: ", X2_125
     X2_100 = get_chisquare(data100, pred100, nbins=2)[0]
     print "X2_100: ", X2_100
-    X2_summed = X2_150 + X2_125 + X2_100 + X2_onsets
-    print "X2 summed: ", X2_summed
-    return X2_summed
+    X2_summed_Go = X2_150 + X2_125 + X2_100 + X2_onsets
+    print "X2 summed: ", X2_summed_Go
+    return X2_summed_Go
      
 
 #%%
 def error_function_GS(params_GS, params_Go, data75, data50, data25): # can I pass it two lots of parameter lists?
     print "Trying with values: " + str(params_GS)
     fac_i, t = get_trials(params_Go) # generate baseline Go fac curves from parameters already optomized
+    inhib_tonic = get_inhib_tonic(t, params_Go)
     activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS) # generates activation threshold with step increase to tonic inhib level
     pred75, pred50, pred25 = get_GS_tms_vals(t, fac_i, activation_thresholds, params_Go[4])
     X2_75 = get_chisquare(data75, pred75, nbins=2)[0]
     print "X2_75: ", X2_75
-    return X2_75
+    X2_50 = get_chisquare(data50, pred50, nbins=2)[0]
+    print "X2_50: ", X2_50
+    X2_25 = get_chisquare(data25, pred25, nbins=2)[0]
+    print "X2_25: ", X2_25
+    X2_summed_GS = X2_75 + X2_50 + X2_25
+    print "X2_summed: ", X2_summed_GS
+    return X2_summed_GS
     
 #%%    
     
@@ -267,9 +274,13 @@ exp_GS_MEPs_25 = load_exp_data(fnameGS25)
 #%%
 # optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
-    params0 = [0.06, 0.4, 0.1, 2, 1] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic
-    optGo = opt.minimize(error_function_Go, params0, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
-    return params0
+    params_Go = [0.06, 0.4, 0.1, 2, 1] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic
+    optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead') #method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    #return params_Go
     
-# optomizing parameters for GS trial activation threshold and single-component facilitation curve
-optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
+#if __name__ == "__main__":
+#    params_Go = [0.06, 0.38, 0.15, 1.52, 0.59] # output from Go optimization function 
+#    params_GS = [1.2, 0.8, 0.2, 0.02] # values for k_inhib, tau_inhib, step_t_mean, step_t_sd    
+#    optGS  = opt.minimize(error_function_GS, params_GS, args=(params_Go, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
+## optomizing parameters for GS trial activation threshold and single-component facilitation curve
+## optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
