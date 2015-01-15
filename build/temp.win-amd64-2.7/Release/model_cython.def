@@ -1,0 +1,3 @@
+LIBRARY model_cython.pyd
+EXPORTS
+initmodel_cython
