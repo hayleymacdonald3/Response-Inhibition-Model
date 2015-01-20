@@ -12,6 +12,12 @@ import matplotlib.pyplot as plt
 import pdb #pdb.set_trace() where want to set breakpoint and have debugging ability
 import model_cython as fast
 #%%
+ 
+def return_summed_chisquare(params_Go):
+    optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)
+    return optGo
+    
+    
 def get_fac(t, params):
     '''
     Generates a facilitation curve
@@ -37,8 +43,9 @@ def get_fac(t, params):
     res[idx] = fac[idx]
     return res
     
-#%%    
-def get_inhib_tonic(t, params):
+#%% 
+
+def get_inhib_tonic(t, inhib):
     '''
     Generates a single horizontal line for tonic inhibition
     
@@ -54,9 +61,9 @@ def get_inhib_tonic(t, params):
     inhib_tonic : array
         array of same size as time index with constant inhibion value    
     '''
-    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib, inhib_sd = params
-    inhib_value = np.random.normal(inhib, inhib_sd, size=1)
-    inhib_tonic = np.ones(t.shape) * inhib_value # creates an array the same size as t, setting each element to 1, then multiplying by what value of inhib has come from normal distribution of inhib value being tested by function
+    #k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib = params # , inhib_sd
+    #inhib_value = np.random.normal(inhib, inhib_sd, size=1)
+    inhib_tonic = np.ones(t.shape) * inhib # creates an array the same size as t, setting each element to 1, then multiplying by what value of inhib has come from normal distribution of inhib value being tested by function
     return inhib_tonic # returns array of 600 x inhib value as horizontal line for tonic inhib
     
 #%%    
@@ -72,7 +79,7 @@ def get_inhib_increase(t, inhib_tonic, params_GS):
     return inhib
 
 #%%
-def get_trials(params, n_rep=100000):
+def get_trials(params, n_rep=100000): 
     '''
     Generates n_rep number of facilitation curves for Go response for all simulated trials required
     
@@ -90,15 +97,18 @@ def get_trials(params, n_rep=100000):
         t : array
             sequence of time index
     '''
-    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib, inhib_sd = params 
+    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_mean, inhib_sd = params  
     t = np.linspace(-.4, .2, 600, endpoint=False)  
 #    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.random.normal(pre_t_mean, pre_t_sd, size=n_rep) # generates n_rep random numbers from a normal distribution of mean, sd that given into function
     fac_i = np.zeros((n_rep, t.size))  # had to change from fac_i, t - why does this cause error now?!?! sets up empty array of zeros for all simulated trials
+    inhib_tonic = np.zeros((n_rep, t.size))    
+    inhib = np.random.normal(inhib_mean, inhib_sd, size=n_rep)    
     for i in range(n_rep):  # for each simulated trial
-        myparams = k_facGo, tau_facGo, pre_t[i]  # takes parameters passed into model plus pre_t number randomly generated for that simulated trial
-        fac_i[i] = fast.get_fac(t, myparams)  # generates curve for that simulated trial
-    return fac_i, t
+        myparams_fac = k_facGo, tau_facGo, pre_t[i]  # takes parameters passed into model plus pre_t number randomly generated for that simulated trial
+        fac_i[i] = fast.get_fac(t, myparams_fac)  # generates curve for that simulated trial
+        inhib_tonic[i] = get_inhib_tonic(t, inhib[i])
+    return fac_i, inhib_tonic, t
 
 #%% 
 def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=100000):
@@ -203,8 +213,8 @@ def load_exp_data(fname):
 #%%
 def error_function_Go(params, data150, data125, data100, data_onsets):  
     print "Trying with values: " + str(params) 
-    fac_i, t = get_trials(params)  
-    inhib_tonic = get_inhib_tonic(t, params) # fifth param is now inhib value, sixth is inhib sd
+    fac_i, inhib_tonic, t = get_trials(params)  # now have 6 parameters - fifth param is now inhib value, sixth is inhib sd
+#    inhib_tonic = get_inhib_tonic(t, params) 
     pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)    
     pred_onsets = get_emg_onsets(t, fac_i, inhib_tonic) 
     X2_onsets = get_chisquare(data_onsets, pred_onsets, nbins=2)[0]
@@ -242,7 +252,7 @@ def error_function_GS(params_GS, params_Go, data75, data50, data25, data_onsets)
     
 def visualize_params(params, data):
     mep150, mep125, mep100, emg_onset = data
-    fac_i, t = get_trials(params, n_rep=1000)
+    fac_i, t = get_trials(params, n_rep=100000)
     plt.plot(t, fac_i.T, 'k-', alpha=0.4)
     plt.plot(np.ones_like(mep150) * -0.15,  mep150, 'rx')
     plt.plot(np.ones_like(mep125) * -0.125, mep125, 'rx')
@@ -253,18 +263,18 @@ def visualize_params(params, data):
     
 #%%
     # Load data
-#data_dir = 'C:\Users\Hayley\Documents\University\PhD\PhD\Modeling\Experimental data for model\'
-data_dir = ''
+data_dir = 'C:\Users\Hayley\Documents\University\PhD\PhD\Modeling\Experimental data for model'
+#data_dir = ''
 # Loading experimental data for Go trials 
 # MEP data
-fname150 = data_dir + 'Go_trial_MEP_amplitudes_150ms.csv'
-fname125 = data_dir + 'Go_trial_MEP_amplitudes_125ms.csv'
-fname100 = data_dir + 'Go_trial_MEP_amplitudes_100ms.csv'
+fname150 = data_dir + '\Go_trial_MEP_amplitudes_150ms.csv'
+fname125 = data_dir + '\Go_trial_MEP_amplitudes_125ms.csv'
+fname100 = data_dir + '\Go_trial_MEP_amplitudes_100ms.csv'
 exp_MEPs_150 = load_exp_data(fname150)
 exp_MEPs_125 = load_exp_data(fname125)
 exp_MEPs_100 = load_exp_data(fname100)
 # EMG onsets
-fnameGoThreeStimOnly = data_dir + 'Go_EMG onsets_only 3 stim times.csv'
+fnameGoThreeStimOnly = data_dir + '\Go_EMG onsets_only 3 stim times.csv'
 exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset. /1000 to put into sectonds, -0.8 to set relative to target line at 0ms
 
 data = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
@@ -281,10 +291,12 @@ data = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
 #fnameGSStimOnsets = data_dir + 'GS_EMG onsets_3 stim times.csv'
 #exp_GS_EMG_onsets_three_stim = load_exp_data(fnameGSStimOnsets) / 1000 - .8
 
+
+    
 #%%
  #optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
-    params_Go = [0.06, 0.4, 0.1, 2, 1, 0.2] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic, inhib_sd
+    params_Go = [0.004, 0.2, 0.04, 2, 1.6, 0.1] # , 0.02, values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic, inhib_sd - old starting point [0.06, 0.4, 0.1, 2, 1, 0.2]
     optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
 #    optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
     #return params_Go
