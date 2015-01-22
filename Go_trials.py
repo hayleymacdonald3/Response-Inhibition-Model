@@ -13,9 +13,11 @@ import pdb #pdb.set_trace() where want to set breakpoint and have debugging abil
 import model_cython as fast
 #%%
  
-def return_summed_chisquare(params_Go):
-    optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)
-    return optGo
+def return_summed_chisquare(params_Go, data):
+    data150, data125, data100, data_onsets = data
+    error_term = error_function_Go(params_Go, data150, data125, data100, data_onsets)
+    #optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)
+    return error_term #optGo
     
     
 def get_fac(t, params):
@@ -298,6 +300,7 @@ data = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
 if __name__ == "__main__":
     params_Go = [0.004, 0.2, 0.04, 2, 1.6, 0.1] # , 0.02, values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic, inhib_sd - old starting point [0.06, 0.4, 0.1, 2, 1, 0.2]
     optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    print optGo
 #    optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
     #return params_Go
 
