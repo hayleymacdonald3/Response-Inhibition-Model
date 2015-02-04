@@ -1,0 +1,9 @@
+#!/usr/bin/python
+
+# Argument to script is the the output from running the profiler, something like 'profile.data'
+
+import sys
+import pstats
+
+p = pstats.Stats(sys.argv[1])
+p.strip_dirs().sort_stats('cumtime').print_stats()
