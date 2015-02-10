@@ -17,7 +17,7 @@ ctypedef np.int8_t DTYPE_b
 cdef extern from "math.h":
     double exp(double x)
 
-def get_fac(np.ndarray[np.float32_t, ndim=1] t, params):
+def get_fac(np.ndarray[DTYPE_t, ndim=1] t, params):
     '''
     Generates a facilitation curve
     
@@ -39,7 +39,7 @@ def get_fac(np.ndarray[np.float32_t, ndim=1] t, params):
     cdef float k_facGo = params[0]
     cdef float tau_facGo = params[1]
     cdef float pre_t = params[2]
-    cdef np.ndarray[np.float32_t, ndim=1] res = np.zeros_like(t)
+    cdef np.ndarray[np.float64_t, ndim=1] res = np.zeros_like(t)
     cdef float temp
     cdef int i
     for i in xrange(len(t)):
@@ -48,7 +48,7 @@ def get_fac(np.ndarray[np.float32_t, ndim=1] t, params):
             res[i] = temp
     return res
 
-def get_trials(np.ndarray[np.float32_t, ndim=1] t, params, int n_rep=10000):
+def get_trials(np.ndarray[DTYPE_t, ndim=1] t, params, int n_rep=10000):
     '''
     Generates n_rep number of facilitation curves for Go response for all simulated trials required
     
@@ -73,7 +73,7 @@ def get_trials(np.ndarray[np.float32_t, ndim=1] t, params, int n_rep=10000):
     cdef float tau_facGo = params[3]
     
     cdef int i, j
-    cdef np.ndarray[np.float32_t, ndim=2]res = np.zeros((n_rep, t.size))
+    cdef np.ndarray[DTYPE_t, ndim=2]res = np.zeros((n_rep, t.size))
     cdef float temp, pre_t
     for i in xrange(n_rep):
         pre_t = np.random.normal(pre_t_mean, pre_t_sd, size=1) # generates 1 random # from normal dist.
