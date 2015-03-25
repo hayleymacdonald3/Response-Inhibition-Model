@@ -11,13 +11,13 @@ from scipy import stats
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 import pdb #pdb.set_trace() where want to set breakpoint and have debugging ability
-import model_cython as fast
+#import model_cython as fast
 from numbapro import cuda
 from math import exp
 from timeit import default_timer as time
 
 # Test parallel implementation?
-PAR_TEST = True
+PAR_TEST = False
 
 
 # Implements get_fac_parallel on CUDA capable GPUs
@@ -128,21 +128,23 @@ def get_trials(params, n_rep=100000):
         t : array
             sequence of time index
     '''
-    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib = params 
+    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_mean, inhib_sd = params 
     t = np.linspace(-.4, .2, 600, endpoint=False, dtype=np.float32)  
 #    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.array(np.random.normal(pre_t_mean, pre_t_sd, size=n_rep), dtype=np.float32)
     fac_i_parallel = np.zeros((n_rep, t.size), dtype=np.float32)
-    inhib_tonic = np.zeros((n_rep, t.size))    #####################
-    inhib = np.random.normal(inhib_mean, inhib_sd, size=n_rep) ###########
-    ############## also need to include inhib_tonic[i] = get_inhib_tonic(t, inhib[i]) in for loop
+    inhib_tonic_parallel = np.zeros((n_rep, t.size))    
+    inhib_parallel = np.random.normal(inhib_mean, inhib_sd, size=n_rep)
+    inhib_tonic_parallel += inhib_parallel[:,np.newaxis]
+   
     if PAR_TEST:
         fac_i = np.zeros((n_rep, t.size), dtype=np.float32) 
+        
         t_start = time()
         for i in range(n_rep):  # for each simulated trial
             myparams = k_facGo, tau_facGo, pre_t[i]
             #fac_i[i] = get_fac(t, myparams) 
-            fac_i[i] = fast.get_fac(t, myparams) 
+            #fac_i[i] = fast.get_fac(t, myparams) 
         t_end = time()  
         s_time = t_end - t_start
         print "Serial time: %.3f s" % s_time
@@ -164,8 +166,10 @@ def get_trials(params, n_rep=100000):
         d_fac = cuda.to_device(fac_i_parallel, stream)
         d_t = cuda.to_device(t, stream)
         d_pre_t = cuda.to_device(pre_t, stream)
+        #d_inhib_tonic = cuda.to_device(inhib_tonic_parallel, stream)        
         print "CUDA kernel: Block dim: ({tx}, {ty}), Grid dim: ({gx}, {gy})".format(tx=tpb_x, ty=tpb_y, gx=bpg_x, gy=bpg_y)
         get_fac_cuda[grid_dim, block_dim](d_fac, n_rep, t, len(t), k_facGo, tau_facGo, pre_t)
+        #get_inhib_tonic_cuda[]
         d_fac.to_host(stream)
     t_end = time()  
     c_time = t_end - t_start
@@ -177,7 +181,7 @@ def get_trials(params, n_rep=100000):
         print "Close enough? ", np.allclose(fac_i, fac_i_parallel, rtol=0, atol=1e-05)
         print "Speed up: %.3f x" % (s_time / c_time)
 
-    return fac_i_parallel, t ################ also need to return inhib_tonic - but do I need a parallel version?!?
+    return fac_i_parallel, inhib_tonic_parallel, t 
 
 #%% 
 def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=100000):
@@ -186,7 +190,7 @@ def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=100000):
     k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS
     thresholds = np.zeros((n_rep, t.size))
     for i in range(n_rep):
-        thresholds[i] = get_inhib_increase(t, inhib_tonic, params_GS)
+        thresholds[i] = get_inhib_increase(t, inhib_tonic[i], params_GS)
     return thresholds
 
 #%%   
@@ -282,8 +286,8 @@ def load_exp_data(fname):
 #%%
 def error_function_Go(params, data150, data125, data100, data_onsets):  
     print "Trying with values: " + str(params) 
-    fac_i, t = get_trials(params)
-    inhib_tonic = get_inhib_tonic(t, params) # final/fifth param is now inhib
+    fac_i, inhib_tonic, t = get_trials(params)
+    #inhib_tonic = get_inhib_tonic(t, params) # final/fifth param is now inhib
     pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)    
     pred_onsets = get_emg_onsets(t, fac_i, inhib_tonic) 
     X2_onsets = get_chisquare(data_onsets, pred_onsets, nbins=2)[0]
@@ -352,19 +356,17 @@ data_GS = exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_thre
 #%%
  #optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
-    params_Go = [0.004, 0.2, 0.04, 2, 1.6, 1.0] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic
+    params_Go = [0.004, 0.2, 0.04, 2, 1.6, 0.2] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_mean, inhib_sd
     optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
-    return optGo.x
+    print "paramsOptimizedGo", optGo
 #    optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
-    
 # optomizing parameters for GS trial activation threshold and single-component facilitation curve    
-if __name__ == "__main__":
-    params_Go = [0.004, 0.19, 0.02, 1.45, 1.61, 0.14] # output from Go optimization function 
+    params_Go = optGo.x #[0.004, 0.19, 0.02, 1.45, 1.61, 0.14] # output from Go optimization function 
     fac_i, inhib_tonic, t = get_trials(params_Go)    
     components_Go = (fac_i, inhib_tonic, t)    
-    params_GS = [1, 0.6, 0.3, 0.05] # [1.2, 0.8, 0.2, 0.02] values for k_inhib, tau_inhib, step_t_mean, step_t_sd    
+    params_GS = [1.2, 0.8, 0.15, 0.02] #values for k_inhib, tau_inhib, step_t_mean, step_t_sd    
     optGS  = opt.minimize(error_function_GS, params_GS, args=(components_Go, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)    
-    print optGS
+    print "paramsOptimizedGS", optGS
     
 # optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
 #%%    
