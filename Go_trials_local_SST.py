@@ -39,7 +39,10 @@ def get_fac(t, params):
     res : array
         fac curve values at times `t`
     '''
-    k_facGo, tau_facGo, pre_t = params
+    pre_t = params
+    # set k and tau to values optimized in ARI model
+    k_facGo = 0.004
+    tau_facGo = 1.69 
     res = np.zeros_like(t)
     fac = 1/k_facGo * ((t + pre_t) - tau_facGo * (1 - np.exp(-(t + pre_t)/tau_facGo)))
     idx = (t + pre_t) >= 0
@@ -100,8 +103,13 @@ def get_trials(params, n_rep=100000):
         t : array
             sequence of time index
     '''
-    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_mean, inhib_sd = params  
-    t = np.linspace(-.4, .2, 600, endpoint=False)  
+    pre_t_mean, pre_t_sd = params  
+#    # set other parameters for fac curve and tonic inhibition to those optimized in ARI modelling - assuming equivalent between task types    
+#    k_facGo = 0.004
+#    tau_facGo = 1.69
+    inhib_mean = 1.57
+    inhib_sd = 0.31
+    t = np.linspace(-.4, .2, 600, endpoint=False)   # keep at same time points, relative to zero being 400ms after the Go signal in SST
 #    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.random.normal(pre_t_mean, pre_t_sd, size=n_rep) # generates n_rep random numbers from a normal distribution of mean, sd that given into function
     fac_i = np.zeros((n_rep, t.size))  # had to change from fac_i, t - why does this cause error now?!?! sets up empty array of zeros for all simulated trials
@@ -110,8 +118,8 @@ def get_trials(params, n_rep=100000):
     inhib_tonic += inhib[:,np.newaxis]
         
     for i in range(n_rep):  # for each simulated trial
-        myparams_fac = k_facGo, tau_facGo, pre_t[i]  # takes parameters passed into model plus pre_t number randomly generated for that simulated trial
-        fac_i[i] = fast.get_fac(t, myparams_fac)  # generates curve for that simulated trial
+        myparams_fac = pre_t[i]  # removed k_facGo, tau_facGo, - takes parameters passed into model plus pre_t number randomly generated for that simulated trial
+        fac_i[i] = get_fac(t, myparams_fac)  # generates curve for that simulated trial
         #inhib_tonic[i] = get_inhib_tonic(t, inhib[i])
     return fac_i, inhib_tonic, t
 
@@ -228,23 +236,24 @@ def load_exp_data(fname):
     return no_nan_MEP_amps_mV
 
 #%%
-def error_function_Go(params, data150, data125, data100, data_onsets):  
+def error_function_Go(params, data_onsets):  # data150, data125, data100, removed
     print "Trying with values: " + str(params) 
     fac_i, inhib_tonic, t = get_trials(params)  # now have 6 parameters - fifth param is now inhib value, sixth is inhib sd
 #    inhib_tonic = get_inhib_tonic(t, params) 
-    pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)    
+    #pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)    
+#    pdb.set_trace()
     pred_onsets, pred_rates = get_emg_onsets(t, fac_i, inhib_tonic) 
     X2_onsets = get_chisquare(data_onsets, pred_onsets, nbins=2)[0]
     print "X2_onsets: ", X2_onsets
-    X2_150 = get_chisquare(data150, pred150, nbins=2)[0]
-    print "X2_150: ", X2_150
-    X2_125 = get_chisquare(data125, pred125, nbins=2)[0]
-    print "X2_125: ", X2_125
-    X2_100 = get_chisquare(data100, pred100, nbins=2)[0]
-    print "X2_100: ", X2_100
-    X2_summed_Go = X2_150 + X2_125 + X2_100 + X2_onsets
-    print "X2 summed: ", X2_summed_Go
-    return X2_summed_Go
+#    X2_150 = get_chisquare(data150, pred150, nbins=2)[0]
+#    print "X2_150: ", X2_150
+#    X2_125 = get_chisquare(data125, pred125, nbins=2)[0]
+#    print "X2_125: ", X2_125
+#    X2_100 = get_chisquare(data100, pred100, nbins=2)[0]
+#    print "X2_100: ", X2_100
+#    X2_summed_Go = X2_150 + X2_125 + X2_100 + X2_onsets
+#    print "X2 summed: ", X2_summed_Go
+    return X2_onsets #X2_summed_Go
      
 
 #%%
@@ -271,17 +280,20 @@ data_dir = 'C:\Users\Hayley\Documents\University\PhD\PhD\Modeling\Experimental d
 #data_dir = ''
 # Loading experimental data for Go trials 
 # MEP data
-fname150 = data_dir + '\Go_trial_MEP_amplitudes_150ms.csv'
-fname125 = data_dir + '\Go_trial_MEP_amplitudes_125ms.csv'
-fname100 = data_dir + '\Go_trial_MEP_amplitudes_100ms.csv'
-exp_MEPs_150 = load_exp_data(fname150)
-exp_MEPs_125 = load_exp_data(fname125)
-exp_MEPs_100 = load_exp_data(fname100)
-# EMG onsets
-fnameGoThreeStimOnly = data_dir + '\Go_EMG onsets_only 3 stim times.csv'
-exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset. /1000 to put into sectonds, -0.8 to set relative to target line at 0ms
+#fname150 = data_dir + '\Go_trial_MEP_amplitudes_150ms.csv'
+#fname125 = data_dir + '\Go_trial_MEP_amplitudes_125ms.csv'
+#fname100 = data_dir + '\Go_trial_MEP_amplitudes_100ms.csv'
+#exp_MEPs_150 = load_exp_data(fname150)
+#exp_MEPs_125 = load_exp_data(fname125)
+#exp_MEPs_100 = load_exp_data(fname100)
+## EMG onsets
+#fnameGoThreeStimOnly = data_dir + '\Go_EMG onsets_only 3 stim times.csv'
+#exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset. /1000 to put into sectonds, -0.8 to set relative to target line at 0ms
 
-data_Go = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
+#data_Go = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
+
+generated_distribution_Go_trials_sst = np.random.normal(0.072, 0.049, size=373) # mean 472 and sd 49 relative to zero at 400ms after Go signal - equivalent to our target -400ms. size=373 as our experimental data included 373 Go EMG onset times
+generated_distribution_partial_trials_sst = np.random.normal(0.145, 0.07, size=172) # mean 545ms and sd 70ms relative to zero at 400ms. size=172 equivalent to our GS EMG onset time experimental data points
 
 # Loading experimental data for Go Left - Stop Right (GS) trials 
  #MEP data
@@ -300,17 +312,17 @@ data_GS = exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_thre
 #%%
  #optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
-    params_Go = [0.004, 0.2, 0.04, 2, 1.6, 1.0] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_tonic, inhib_sd - old starting point [0.06, 0.4, 0.1, 2, 1, 0.2]
-    optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    params_Go = [0.2, 0.04] # values for pre_t_mean, pre_t_sd - removed k_facGo, tau_facGo, inhib_tonic, inhib_sd - ARI starting point [0.004, 0.2, 0.04, 2, 1.6, 1.0]
+    optGo = opt.minimize(error_function_Go, params_Go, args=(generated_distribution_Go_trials_sst), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
     print "ParamsOptimizedGo", optGo # returns array of parameter values when optimization terminated successfully
 #    optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
  #optomizing parameters for GS trial activation threshold and single-component facilitation curve    
-    params_Go = optGo.x #[0.004, 0.19, 0.02, 1.45, 1.61, 0.14] # output from Go optimization function 
-    fac_i, inhib_tonic, t = get_trials(params_Go) # generate baseline Go fac curves from parameters already optimized
-    components_Go = (fac_i, inhib_tonic, t)
-    params_GS = [1.2, 0.8, 0.1, 0.02] # [1.2, 0.8, 0.2, 0.02] values for k_inhib, tau_inhib, step_t_mean, step_t_sd    
-    optGS  = opt.minimize(error_function_GS, params_GS, args=(components_Go, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)    
-    print "ParamsOptimizedGS", optGS
+#    params_Go = optGo.x #[0.004, 0.19, 0.02, 1.69, 1.57, 0.31] # output from Go optimization function 
+#    fac_i, inhib_tonic, t = get_trials(params_Go) # generate baseline Go fac curves from parameters already optimized
+#    components_Go = (fac_i, inhib_tonic, t)
+#    params_GS = [1.2, 0.8, 0.1, 0.02] # [1.2, 0.8, 0.2, 0.02] values for k_inhib, tau_inhib, step_t_mean, step_t_sd    
+#    optGS  = opt.minimize(error_function_GS, params_GS, args=(components_Go, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)    
+#    print "ParamsOptimizedGS", optGS
     
 # optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
 
@@ -319,12 +331,12 @@ if __name__ == "__main__":
     # params_Go = [0.004, 0.19, 0.02, 1.69, 1.57, 0.31] from cluster_run2_sb.txt
     # params_GS = [1.76, 0.18, 0.21, 0.01] from cluster_run3_GS_only.txt
 def visualize_params(params_Go, data_Go):  # visualizes fac curves and tonic inhibition on Go trials
-    mep150, mep125, mep100, emg_onset = data_Go
+    emg_onset = data_Go #removed mep150, mep125, mep100, 
     fac_i, inhib_tonic, t = get_trials(params_Go, n_rep=100)
     plt.plot(t, fac_i.T, 'k-', alpha=0.4)
-    plt.plot(np.ones_like(mep150) * -0.15,  mep150, 'rx')
-    plt.plot(np.ones_like(mep125) * -0.125, mep125, 'rx')
-    plt.plot(np.ones_like(mep100) * -0.100, mep100, 'rx')
+#    plt.plot(np.ones_like(mep150) * -0.15,  mep150, 'rx')
+#    plt.plot(np.ones_like(mep125) * -0.125, mep125, 'rx')
+#    plt.plot(np.ones_like(mep100) * -0.100, mep100, 'rx')
     #inhib_tonic = params_Go[-2]
     plt.plot(t, inhib_tonic.T, color='r')
     plt.plot(emg_onset, np.zeros_like(emg_onset), 'rx') #* inhib_tonic

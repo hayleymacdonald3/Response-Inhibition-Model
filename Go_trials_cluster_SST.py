@@ -23,9 +23,10 @@ PAR_TEST = False
 # Implements get_fac_parallel on CUDA capable GPUs
 # Requires Anaconda Accelerate by NumbaPro
 @cuda.jit('void(float32[:,:], int32, float32[:], int32, float32, float32, float32[:])')
-def get_fac_cuda(fac, n_rep, t, n_t, k_facGo, tau_facGo, pre_t):
+def get_fac_cuda(fac, n_rep, t, n_t, k_facGo, tau_facGo, pre_t): #removed k_facGo and tau_facGo here
     # argument fac is a 2D array with n_rep columns and n_t rows
-
+#    k_facGo = 0.004 # not needed as exact values are now passed into function
+#    tau_facGo = 1.69 # same as line above
     # Get the thread index and return if the thread index is not valid
     i, j = cuda.grid(2) 
     if i >= n_rep or j >= n_t:
@@ -40,8 +41,10 @@ def get_fac_cuda(fac, n_rep, t, n_t, k_facGo, tau_facGo, pre_t):
 # This is the base template for running fac operations in parallel
 # Parallel methods of get_fac should copy this code and modify for the appropriate parallelisation
 # framework.
-def get_fac_parallel(fac, n_rep, t, n_t, k_facGo, tau_facGo, pre_t):
+def get_fac_parallel(fac, n_rep, t, n_t, k_facGo, tau_facGo, pre_t): #removed k_facGo and tau_facGo here
 	# performs all operations for fac in a nested loop with a single output data structure fac
+#    k_facGo = 0.004  
+#    tau_facGo = 1.69
     for i in range(n_rep):
         for j in range(n_t):
             tj = t[j] + pre_t[i]
@@ -128,9 +131,12 @@ def get_trials(params, n_rep=100000):
         t : array
             sequence of time index
     '''
-    k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_mean, inhib_sd = params 
+    pre_t_mean, pre_t_sd = params 
+    k_facGo = 0.004
+    tau_facGo = 1.69
+    inhib_mean = 1.57
+    inhib_sd = 0.31
     t = np.linspace(-.4, .2, 600, endpoint=False, dtype=np.float32)  
-#    tau_facGo = 2  # Currently set, but will need to optomize
     pre_t = np.array(np.random.normal(pre_t_mean, pre_t_sd, size=n_rep), dtype=np.float32)
     fac_i_parallel = np.zeros((n_rep, t.size), dtype=np.float32)
     inhib_tonic_parallel = np.zeros((n_rep, t.size))    
@@ -142,7 +148,7 @@ def get_trials(params, n_rep=100000):
         
         t_start = time()
         for i in range(n_rep):  # for each simulated trial
-            myparams = k_facGo, tau_facGo, pre_t[i]
+            myparams = pre_t[i] #k_facGo, tau_facGo, 
             #fac_i[i] = get_fac(t, myparams) 
             #fac_i[i] = fast.get_fac(t, myparams) 
         t_end = time()  
@@ -168,7 +174,7 @@ def get_trials(params, n_rep=100000):
         d_pre_t = cuda.to_device(pre_t, stream)
         #d_inhib_tonic = cuda.to_device(inhib_tonic_parallel, stream)        
         print "CUDA kernel: Block dim: ({tx}, {ty}), Grid dim: ({gx}, {gy})".format(tx=tpb_x, ty=tpb_y, gx=bpg_x, gy=bpg_y)
-        get_fac_cuda[grid_dim, block_dim](d_fac, n_rep, t, len(t), k_facGo, tau_facGo, pre_t)
+        get_fac_cuda[grid_dim, block_dim](d_fac, n_rep, t, len(t), k_facGo, tau_facGo, pre_t) #k_facGo, tau_facGo, removed - defined in get_fac_cuda function input argument
         #get_inhib_tonic_cuda[]
         d_fac.to_host(stream)
     t_end = time()  
@@ -176,7 +182,7 @@ def get_trials(params, n_rep=100000):
     print "CUDA time: %.3f s" % c_time
 
     if PAR_TEST:
-        print "Difference betwwen fac_i and fac_i_parallel"
+        print "Difference between fac_i and fac_i_parallel"
         print (fac_i - fac_i_parallel)
         print "Close enough? ", np.allclose(fac_i, fac_i_parallel, rtol=0, atol=1e-05)
         print "Speed up: %.3f x" % (s_time / c_time)
@@ -284,23 +290,23 @@ def load_exp_data(fname):
     return no_nan_MEP_amps_mV
 
 #%%
-def error_function_Go(params, data150, data125, data100, data_onsets):  
+def error_function_Go(params, data_onsets):  #, data150, data125, data100, 
     print "Trying with values: " + str(params) 
     fac_i, inhib_tonic, t = get_trials(params)
     #inhib_tonic = get_inhib_tonic(t, params) # final/fifth param is now inhib
-    pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)    
+#    pred150, pred125, pred100 = get_fac_tms_vals(t, fac_i)    
     pred_onsets = get_emg_onsets(t, fac_i, inhib_tonic) 
     X2_onsets = get_chisquare(data_onsets, pred_onsets, nbins=2)[0]
     print "X2_onsets: ", X2_onsets
-    X2_150 = get_chisquare(data150, pred150, nbins=2)[0]
-    print "X2_150: ", X2_150
-    X2_125 = get_chisquare(data125, pred125, nbins=2)[0]
-    print "X2_125: ", X2_125
-    X2_100 = get_chisquare(data100, pred100, nbins=2)[0]
-    print "X2_100: ", X2_100
-    X2_summed_Go = X2_150 + X2_125 + X2_100 + X2_onsets
-    print "X2 summed: ", X2_summed_Go
-    return X2_summed_Go
+#    X2_150 = get_chisquare(data150, pred150, nbins=2)[0]
+#    print "X2_150: ", X2_150
+#    X2_125 = get_chisquare(data125, pred125, nbins=2)[0]
+#    print "X2_125: ", X2_125
+#    X2_100 = get_chisquare(data100, pred100, nbins=2)[0]
+#    print "X2_100: ", X2_100
+#    X2_summed_Go = X2_150 + X2_125 + X2_100 + X2_onsets
+#    print "X2 summed: ", X2_summed_Go
+    return X2_onsets #X2_summed_Go
      
 
 #%%
@@ -327,17 +333,20 @@ def error_function_GS(params_GS, params_Go, data75, data50, data25, data_onsets)
 data_dir = ''
 # Loading experimental data for Go trials 
 # MEP data
-fname150 = data_dir + 'Go_trial_MEP_amplitudes_150ms.csv'
-fname125 = data_dir + 'Go_trial_MEP_amplitudes_125ms.csv'
-fname100 = data_dir + 'Go_trial_MEP_amplitudes_100ms.csv'
-exp_MEPs_150 = load_exp_data(fname150)
-exp_MEPs_125 = load_exp_data(fname125)
-exp_MEPs_100 = load_exp_data(fname100)
-# EMG onsets
-fnameGoThreeStimOnly = data_dir + 'Go_EMG onsets_only 3 stim times.csv'
-exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset. /1000 to put into sectonds, -0.8 to set relative to target line at 0ms
+#fname150 = data_dir + 'Go_trial_MEP_amplitudes_150ms.csv'
+#fname125 = data_dir + 'Go_trial_MEP_amplitudes_125ms.csv'
+#fname100 = data_dir + 'Go_trial_MEP_amplitudes_100ms.csv'
+#exp_MEPs_150 = load_exp_data(fname150)
+#exp_MEPs_125 = load_exp_data(fname125)
+#exp_MEPs_100 = load_exp_data(fname100)
+## EMG onsets
+#fnameGoThreeStimOnly = data_dir + 'Go_EMG onsets_only 3 stim times.csv'
+#exp_EMG_onsets_three_stim = load_exp_data(fnameGoThreeStimOnly) / 1000 - .8 # # Uses same load_exp_data function as for MEP data, saving output variable as EMG onset. /1000 to put into sectonds, -0.8 to set relative to target line at 0ms
+#
+#data_Go = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
 
-data_Go = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
+generated_distribution_Go_trials_sst = np.random.normal(0.072, 0.049, size=373) # mean 472 and sd 49 relative to zero at 400ms after Go signal - equivalent to our target -400ms. size=373 as our experimental data included 373 Go EMG onset times
+generated_distribution_partial_trials_sst = np.random.normal(0.145, 0.07, size=172) # mean 545ms and sd 70ms relative to zero at 400ms. size=172 equivalent to our GS EMG onset time experimental data points
 
 # Loading experimental data for Go Left - Stop Right (GS) trials 
 # MEP data
@@ -357,17 +366,17 @@ data_GS = exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_thre
  #optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
     # Comment out lines for optGo if want to look at reliability of optGS    
-#    params_Go = [0.004, 0.2, 0.04, 2, 1.6, 0.2] # values for k_facGo, pre_t_mean, pre_t_sd, tau_facGo, inhib_mean, inhib_sd
-#    optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
-#    print "paramsOptimizedGo", optGo
+    params_Go = [0.2, 0.04] # values for pre_t_mean, pre_t_sd - removed k_facGo, tau_facGo, inhib_mean, inhib_sd
+    optGo = opt.minimize(error_function_Go, params_Go, args=(generated_distribution_Go_trials_sst), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
+    print "paramsOptimizedGo", optGo
 #    optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
 # optomizing parameters for GS trial activation threshold and single-component facilitation curve    
-    params_Go = [0.004, 0.19, 0.02, 1.69, 1.57, 0.31] #optGo.x  output from Go optimization function 
-    fac_i, inhib_tonic, t = get_trials(params_Go)    
-    components_Go = (fac_i, inhib_tonic, t)    
-    params_GS = [1.2, 0.8, 0.15, 0.02] #values for k_inhib, tau_inhib, step_t_mean, step_t_sd    
-    optGS  = opt.minimize(error_function_GS, params_GS, args=(components_Go, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)    
-    print "paramsOptimizedGS", optGS
+#    params_Go = [0.004, 0.19, 0.02, 1.69, 1.57, 0.31] #optGo.x  output from Go optimization function 
+#    fac_i, inhib_tonic, t = get_trials(params_Go)    
+#    components_Go = (fac_i, inhib_tonic, t)    
+#    params_GS = [1.2, 0.8, 0.15, 0.02] #values for k_inhib, tau_inhib, step_t_mean, step_t_sd    
+#    optGS  = opt.minimize(error_function_GS, params_GS, args=(components_Go, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)    
+#    print "paramsOptimizedGS", optGS
     
 # optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
 #%%    
