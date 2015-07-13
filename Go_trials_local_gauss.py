@@ -92,7 +92,7 @@ def get_inhib_increase(t, inhib_tonic, params_GS):
     return inhib
 
 #%%
-def get_trials(params, n_rep=100):  # change back to 100000 once finalized or on cluster
+def get_trials(params, n_rep=1000):  # change back to 100000 once finalized or on cluster
     '''
     Generates n_rep number of facilitation curves for Go response for all simulated trials required
     
@@ -128,7 +128,7 @@ def get_trials(params, n_rep=100):  # change back to 100000 once finalized or on
     return fac_i, inhib_tonic, t
 
 #%% 
-def get_trials_facNew(params_facNew, facBimanual, t, n_rep=100): # increase n_rep once finalized
+def get_trials_facNew(params_facNew, facBimanual, t, n_rep=1000): # increase n_rep once finalized
     pre_t_sd = params_facNew
     pre_t_mean = 0.035 # 35ms before the target - compromise between -50 and -20ms, as suggested later from F&R results - mostly after Partial MEPs but expect lots of variability in uncoupling process because much more variability in Partial lift times
     k_facNew = 0.004 # same as k_facGo - assuming same response initiaton as on Go trials
@@ -142,7 +142,7 @@ def get_trials_facNew(params_facNew, facBimanual, t, n_rep=100): # increase n_re
     return fac_i_new
 
 #%%
-def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=100): # change back to 100000 once finalized
+def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=1000): # change back to 100000 once finalized
     '''
     '''
     k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS
@@ -175,24 +175,26 @@ def get_fac_tms_vals(t, fac_i, pts=(-.15, -.125, -.1)):
     return (vals150, vals125, vals100)  
 
 #%%    
-def get_emg_onsets(t, fac_i, inhib): ##########################################################################
+def get_emg_onsets(t, fac_i, inhib): 
     '''
     '''
     gradient = np.zeros(fac_i.shape[0]) + np.nan
     getinhib = fac_i < inhib # for each curve, finds if true or false that value for fac_i is less than value for inhib
-    switches = np.diff(getinhib) # diff function minuses each element from the previous one
-    index_trials = np.nonzero(switches == 1) # finds indexes of all cases when values change from fac_i being below to above inhib value i.e. when curve crossing horizontal line
-    index_trials_offset = np.nonzero(switches == -1) #    
+    switches = getinhib.astype(int)
+    switches = np.diff(switches) # diff function minuses each element from the previous one
+    index_trials_onsets = np.nonzero(switches == -1) # finds indexes of all cases when values change from fac_i being below to above inhib value i.e. when curve crossing horizontal line - rising 
+    index_trials_offset = np.nonzero(switches == 1) #    
     #getinhib_offsets = fac_i > inhib
     #switches_offsets = np.diff(getinhib_offsets)
    
     # assumes only one onset and offset per trial - okay for simple Gaussians    
     
-    for trial, time_pt in zip(index_trials[0], index_trials[1]):
+    for trial, time_pt in zip(index_trials_onsets[0], index_trials_onsets[1]):
         rise = fac_i[trial, time_pt + 1] - fac_i[trial, time_pt - 1]
         run  = t[time_pt + 1] - t[time_pt - 1]
         gradient[trial] = rise / run
-    return t[index_trials[1]], gradient, t[index_trials_offset[1]] # finds actual time value and slope gradient at those indexes of curve intersection points
+        
+    return t[index_trials_onsets[1]], gradient, t[index_trials_offset[1]] # finds actual time value and slope gradient at those indexes of curve intersection points
     
     
 #def get_emg_onset_rates(t, fac_i, inhib):
@@ -279,7 +281,7 @@ def error_function_Go(params, data150, data125, data100, data_onsets, data_offse
     print "X2_125: ", X2_125
     X2_100 = get_chisquare(data100, pred100, nbins=2)[0]
     print "X2_100: ", X2_100
-    X2_summed_Go = X2_150 + X2_125 + X2_100 + X2_onsets
+    X2_summed_Go = X2_150 + X2_125 + X2_100 + X2_onsets + X2_offsets
     print "X2 summed: ", X2_summed_Go
     return X2_summed_Go
      
@@ -335,7 +337,7 @@ sim_data_Go_EMG_offsets = np.add(exp_EMG_onsets_three_stim, 0.107)
 ############################################################################
 #need to add experimental data of EMG offsets to fit the curves
 
-data_Go = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim
+data_Go = exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim, sim_data_Go_EMG_offsets
 
 # Loading experimental data for Go Left - Stop Right (GS) trials 
  #MEP data
@@ -354,7 +356,7 @@ data_GS = exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_thre
 #%%
  #optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
 if __name__ == "__main__":
-    params_Go = [2.5, 0.2, 0.07, 0.02, 0.1, 0.01, 1.57, 0.3] # values for a_facGo_mean, a_facGo_sd, b_facGo_mean, b_facGo_sd, c_facGo_mean, c_facGo_sd, inhib_mean, inhib_sd - old starting point [0.06, 0.4, 0.1, 2, 1, 0.2]
+    params_Go = [2, 0.2, 0.06, 0.02, 0.1, 0.01, 1.5, 0.3] # values for a_facGo_mean, a_facGo_sd, b_facGo_mean, b_facGo_sd, c_facGo_mean, c_facGo_sd, inhib_mean, inhib_sd - old starting point [0.06, 0.4, 0.1, 2, 1, 0.2]
     optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim, sim_data_Go_EMG_offsets), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])  
     print "ParamsOptimizedGo", optGo # returns array of parameter values when optimization terminated successfully
 #    optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
