@@ -1,0 +1,4 @@
+/home/smas036/anaconda/lib/python2.7/site-packages/scipy/stats/stats.py:3831: RuntimeWarning: divide by zero encountered in true_divide
+  terms = (f_obs - f_exp)**2 / f_exp
+/home/smas036/anaconda/lib/python2.7/site-packages/scipy/optimize/optimize.py:456: RuntimeWarning: invalid value encountered in subtract
+  numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= ftol):
