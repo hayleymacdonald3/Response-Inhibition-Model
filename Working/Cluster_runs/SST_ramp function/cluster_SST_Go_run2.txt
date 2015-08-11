@@ -1,0 +1,95 @@
+Trying with values: [ 0.2   0.04]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.223 s
+X2_onsets:  98.351647894
+Trying with values: [ 0.21  0.04]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.213 s
+X2_onsets:  217.558250482
+Trying with values: [ 0.2    0.042]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.213 s
+X2_onsets:  78.5459605041
+Trying with values: [ 0.19   0.042]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.213 s
+X2_onsets:  37.6457247854
+Trying with values: [ 0.18   0.043]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.213 s
+X2_onsets:  17.746344887
+Trying with values: [ 0.18   0.045]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.213 s
+X2_onsets:  13.6168872583
+Trying with values: [ 0.17    0.0475]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.213 s
+X2_onsets:  6.44255200182
+Trying with values: [ 0.15    0.0485]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.213 s
+X2_onsets:  2.29766780332
+Trying with values: [ 0.125    0.05175]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.236 s
+X2_onsets:  0.555706295199
+Trying with values: [ 0.115    0.05625]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.245577436146
+Trying with values: [ 0.0825    0.062875]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.0021548681512
+Trying with values: [ 0.0375    0.067125]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.199680477698
+Trying with values: [-0.005    0.07825]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.555850520076
+Trying with values: [ 0.0925    0.058375]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.029959618481
+Trying with values: [ 0.1375    0.054125]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.234 s
+X2_onsets:  0.922324872755
+Trying with values: [ 0.0625    0.063875]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.0357440115193
+Trying with values: [ 0.1125    0.057375]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.234 s
+X2_onsets:  0.205385430688
+Trying with values: [ 0.075    0.06225]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.00284234513982
+Trying with values: [ 0.065    0.06675]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.021852959537
+Trying with values: [ 0.071875    0.06465625]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.00673586410953
+Trying with values: [ 0.085625    0.06046875]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.234 s
+X2_onsets:  0.00690389682384
+Trying with values: [ 0.0753125   0.06360937]
+CUDA kernel: Block dim: (8, 8), Grid dim: (12501, 76)
+CUDA time: 0.233 s
+X2_onsets:  0.00261182537214
+paramsOptimizedGo   status: 0
+    nfev: 22
+ success: True
+     fun: 0.0021548681511995059
+       x: array([ 0.0825  ,  0.062875])
+ message: 'Optimization terminated successfully.'
+     nit: 11

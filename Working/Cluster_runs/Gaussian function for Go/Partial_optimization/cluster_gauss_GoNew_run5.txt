@@ -1,0 +1,194 @@
+cuda trials per second: 305779
+Trying with value: [ 0.2   0.05]
+cuda trials per second: 225540
+X2_onsets:  20.6685983718
+X2_rates:  5.32134041308
+X2_summed: 25.9899387849Trying with value: [ 0.21  0.05]
+cuda trials per second: 226164
+X2_onsets:  30.0104919904
+X2_rates:  7.73503181305
+X2_summed: 37.7455238035Trying with value: [ 0.2     0.0525]
+cuda trials per second: 231257
+X2_onsets:  18.3971264596
+X2_rates:  4.62356852837
+X2_summed: 23.0206949879Trying with value: [ 0.19    0.0525]
+cuda trials per second: 220474
+X2_onsets:  12.9681208775
+X2_rates:  3.34392386334
+X2_summed: 16.3120447408Trying with value: [ 0.18     0.05375]
+cuda trials per second: 230159
+X2_onsets:  9.41836693901
+X2_rates:  2.30057004051
+X2_summed: 11.7189369795Trying with value: [ 0.18     0.05625]
+cuda trials per second: 423896
+X2_onsets:  8.91394008536
+X2_rates:  2.17911118897
+X2_summed: 11.0930512743Trying with value: [ 0.17      0.059375]
+cuda trials per second: 289792
+X2_onsets:  6.68034370055
+X2_rates:  1.59186559697
+X2_summed: 8.27220929752Trying with value: [ 0.15      0.060625]
+cuda trials per second: 263873
+X2_onsets:  4.80937274823
+X2_rates:  1.03798188131
+X2_summed: 5.84735462955Trying with value: [ 0.125      0.0646875]
+cuda trials per second: 227381
+X2_onsets:  3.98871509697
+X2_rates:  0.750122322345
+X2_summed: 4.73883741932Trying with value: [ 0.115      0.0703125]
+cuda trials per second: 399208
+X2_onsets:  4.2468144041
+X2_rates:  0.794736605709
+X2_summed: 5.04155100981Trying with value: [ 0.07      0.075625]
+cuda trials per second: 243305
+X2_onsets:  5.37251454362
+X2_rates:  0.858126012807
+X2_summed: 6.23064055643Trying with value: [ 0.095      0.0715625]
+cuda trials per second: 219790
+X2_onsets:  4.51597801135
+X2_rates:  0.782538228532
+X2_summed: 5.29851623988Trying with value: [ 0.145      0.0634375]
+cuda trials per second: 360333
+X2_onsets:  4.69112079587
+X2_rates:  0.983443432317
+X2_summed: 5.67456422818Trying with value: [ 0.1075      0.06953125]
+cuda trials per second: 227265
+X2_onsets:  4.23669966814
+X2_rates:  0.769609894442
+X2_summed: 5.00630956258Trying with value: [ 0.1175      0.06390625]
+cuda trials per second: 407544
+X2_onsets:  3.80196435592
+X2_rates:  0.695340785658
+X2_summed: 4.49730514157Trying with value: [ 0.11875     0.06070312]
+cuda trials per second: 419794
+X2_onsets:  3.60616591734
+X2_rates:  0.656446100512
+X2_summed: 4.26261201785Trying with value: [ 0.13625     0.05585937]
+cuda trials per second: 256059
+X2_onsets:  3.9302760463
+X2_rates:  0.765371877473
+X2_summed: 4.69564792377Trying with value: [ 0.13      0.051875]
+cuda trials per second: 426067
+X2_onsets:  3.3788928176
+X2_rates:  0.613010960838
+X2_summed: 3.99190377844Trying with value: [ 0.1325      0.04546875]
+cuda trials per second: 407065
+X2_onsets:  3.02986308263
+X2_rates:  0.542741208261
+X2_summed: 3.57260429089Trying with value: [ 0.115      0.0503125]
+cuda trials per second: 429882
+X2_onsets:  2.85973427559
+X2_rates:  0.455482350845
+X2_summed: 3.31521662643Trying with value: [ 0.104375    0.04753906]
+cuda trials per second: 424410
+X2_onsets:  2.777419288
+X2_rates:  0.38754766423
+X2_summed: 3.16496695223Trying with value: [ 0.118125    0.03230469]
+cuda trials per second: 428469
+X2_onsets:  1.8571432495
+X2_rates:  0.206904756024
+X2_summed: 2.06404800553Trying with value: [ 0.1178125   0.01810547]
+cuda trials per second: 422319
+X2_onsets:  1.14561920913
+X2_rates:  0.0708890186401
+X2_summed: 1.21650822777Trying with value: [ 0.0896875   0.02017578]
+cuda trials per second: 415193
+X2_onsets:  1.75518325505
+X2_rates:  0.0330035933092
+X2_summed: 1.78818684836Trying with value: [ 0.103125   -0.00925781]
+Fixing SD value to greater than zero
+cuda trials per second: 428989
+X2_onsets:  0.660111688118
+X2_rates:  0.0209014218982
+X2_summed: 0.681013110016Trying with value: [ 0.1025     -0.03765625]
+Fixing SD value to greater than zero
+cuda trials per second: 302724
+X2_onsets:  0.677487896166
+X2_rates:  0.0244524565498
+X2_summed: 0.701940352716Trying with value: [ 0.13125     0.00792969]
+cuda trials per second: 268858
+X2_onsets:  3.259017409
+X2_rates:  0.605277999248
+X2_summed: 3.86429540825Trying with value: [ 0.10007813  0.01711426]
+cuda trials per second: 290422
+X2_onsets:  1.05444094052
+X2_rates:  0.000860110811653
+X2_summed: 1.05530105133Trying with value: [ 0.08539063  0.00900879]
+cuda trials per second: 225475
+X2_onsets:  2.38026237527
+X2_rates:  0.00217254331239
+X2_summed: 2.38243491858Trying with value: [ 0.10970703  0.0158313 ]
+cuda trials per second: 426612
+X2_onsets:  0.861960944125
+X2_rates:  0.00593474853378
+X2_summed: 0.867895692658Trying with value: [ 0.11275391  0.00871704]
+cuda trials per second: 425190
+X2_onsets:  0.653129896675
+X2_rates:  0.00203327823959
+X2_summed: 0.655163174915Trying with value: [ 0.1190918   0.00451843]
+cuda trials per second: 220871
+X2_onsets:  1.00397323065
+X2_rates:  0.0672154094996
+X2_summed: 1.07118864015Trying with value: [ 0.10617188  0.00288574]
+cuda trials per second: 377267
+X2_onsets:  0.470722979
+X2_rates:  0.0400194514767
+X2_summed: 0.510742430477Trying with value: [ 0.1044043  -0.00358704]
+Fixing SD value to greater than zero
+cuda trials per second: 425883
+X2_onsets:  0.648379556856
+X2_rates:  0.0164151448023
+X2_summed: 0.664794701658Trying with value: [ 0.11580078  0.00160278]
+cuda trials per second: 227025
+X2_onsets:  0.729392087716
+X2_rates:  0.0170817266429
+X2_summed: 0.746473814359Trying with value: [ 0.10629395  0.0079007 ]
+cuda trials per second: 308187
+X2_onsets:  0.571892932265
+X2_rates:  0.0178359013437
+X2_summed: 0.589728833608Trying with value: [ 0.09971191  0.0020694 ]
+cuda trials per second: 250735
+X2_onsets:  0.614036311571
+X2_rates:  0.115166636836
+X2_summed: 0.729202948407Trying with value: [ 0.10949341  0.00705513]
+cuda trials per second: 228526
+X2_onsets:  0.551580601571
+X2_rates:  0.00365445019013
+X2_summed: 0.555235051761Trying with value: [ 0.10937134  0.00204018]
+cuda trials per second: 391908
+X2_onsets:  0.475773767909
+X2_rates:  0.0114087267848
+X2_summed: 0.487182494694Trying with value: [ 0.11091003 -0.00089008]
+Fixing SD value to greater than zero
+cuda trials per second: 220843
+X2_onsets:  0.65829784216
+X2_rates:  0.000117391412597
+X2_summed: 0.658415233573Trying with value: [ 0.1060498  -0.00212921]
+Fixing SD value to greater than zero
+cuda trials per second: 275592
+X2_onsets:  0.629040140148
+X2_rates:  0.0100854024396
+X2_summed: 0.639125542588Trying with value: [ 0.10863251  0.00475904]
+cuda trials per second: 225034
+X2_onsets:  0.499289342269
+X2_rates:  0.0121222329881
+X2_summed: 0.511411575257Trying with value: [ 0.10691071  0.00016687]
+cuda trials per second: 249385
+X2_onsets:  0.454611997366
+X2_rates:  0.0328800804893
+X2_summed: 0.487492077855Trying with value: [ 0.11011017 -0.00067869]
+Fixing SD value to greater than zero
+cuda trials per second: 302822
+X2_onsets:  0.636818300849
+X2_rates:  0.000267474303404
+X2_summed: 0.637085775153Trying with value: [ 0.10715645  0.00199463]
+cuda trials per second: 243228
+X2_onsets:  0.458868027644
+X2_rates:  0.0302391825095
+X2_summed: 0.489107210154ParamsOptimizedGSFacNew   status: 0
+    nfev: 45
+ success: True
+     fun: 0.48718249469417568
+       x: array([ 0.10937134,  0.00204018])
+ message: 'Optimization terminated successfully.'
+     nit: 24
