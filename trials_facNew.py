@@ -21,7 +21,7 @@ def _gaussian_cuda64(fac, fac_Biman, n_rep, t, n_t, a_facGo, b_facGo, c_facGo):
         return
 
     # Fill in 2D fac data structure
-    fac[i, j] = np.add(fac_Biman[i, j], (a_facGo[i] * exp(-(t[j] - b_facGo[i])**2 /(2 * c_facGo[i]**2)))) # now adding two arrays together for new fac curve by Hayley
+    fac[i, j] = fac_Biman[i, j] + (a_facGo[i] * exp(-(t[j] - b_facGo[i])**2 /(2 * c_facGo[i]**2))) # now adding two arrays together for new fac curve by Hayley
  # original equation from Sina for single fac curve: fac[i, j] = a_facGo[i] * exp(-(t[j] - b_facGo[i])**2 /(2 * c_facGo[i]**2))
 
 
@@ -34,7 +34,7 @@ def _gaussian_cuda32(fac, fac_Biman, n_rep, t, n_t, a_facGo, b_facGo, c_facGo):
         return
 
     # Fill in 2D fac data structure
-    fac[i, j] = np.add(fac_Biman[i, j], (a_facGo[i] * exp(-(t[j] - b_facGo[i])**2 /(2 * c_facGo[i]**2)))) # now adding two arrays together for new fac curve by Hayley
+    fac[i, j] = fac_Biman[i, j] + (a_facGo[i] * exp(-(t[j] - b_facGo[i])**2 /(2 * c_facGo[i]**2))) # now adding two arrays together for new fac curve by Hayley
 # original equation from Sina for single fac curve: fac[i, j] = a_facGo[i] * exp(-(t[j] - b_facGo[i])**2 /(2 * c_facGo[i]**2))
 
 # Non-parallel version but restructured from _gaussian_serial to form a basis

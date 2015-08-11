@@ -4,6 +4,8 @@ Created on Wed Jul 22 16:35:48 2015
 
 Sina's cuda code for cluster from GitHub repository
 """
+import sys
+
 import numpy as np
 #import sympy as sp
 from scipy import stats
@@ -135,10 +137,10 @@ def get_emg_onsets_offsets(t, fac_i, inhib):
     emg_offsets= t[index_trials_offset[1]]
     for i in range(ntrials):
         if np.all(switches[i] == 1):
-            emg_onsets[-1] = 1000 * (inhib[i,1] - fac_i[i].max()) + t[np.argmax(fac_i[i])]
-            emg_offsets[-1] = 1000 * (inhib[i,1] - fac_i[i].max()) + t[np.argmax(fac_i[i])]
+            emg_onsets = np.append(emg_onsets, (1000 * (inhib[i,1] - fac_i[i].max()) + t[np.argmax(fac_i[i])]))
+            emg_offsets = np.append(emg_offsets, (1000 * (inhib[i,1] - fac_i[i].max()) + t[np.argmax(fac_i[i])]))
         elif switches[i, -1] == 0:
-            emg_offsets[-1] = 1000 * (fac_i[i, -1] - inhib[i, -1]) + t[-1]
+            emg_offsets = np.append(emg_offsets, (1000 * (fac_i[i, -1] - inhib[i, -1]) + t[-1]))
 
     # assumes only one onset and offset per trial - okay for simple Gaussians
 
@@ -165,7 +167,7 @@ def get_emg_onsets_facNew(t, fac_i, inhib):
     #emg_offsets= t[index_trials_offset[1]]
     for i in range(ntrials):
         if np.all(switches[i] == 1):
-            emg_onsets[-1] = 1000 * (inhib[i,1] - fac_i[i].max()) + t[np.argmax(fac_i[i])]
+            emg_onsets = np.append(emg_onsets, (1000 * (inhib[i,1] - fac_i[i].max()) + t[np.argmax(fac_i[i])]))
 #            emg_offsets[-1] = 1000 * (inhib[i,1] - fac_i[i].max()) + t[np.argmax(fac_i[i])]
 #        elif switches[i, -1] == 0:
 #            emg_offsets[-1] = 1000 * (fac_i[i, -1] - inhib[i, -1]) + t[-1]
@@ -283,15 +285,19 @@ def error_function_GS(params_GS, params_Go, data75, data50, data25, data_onsets)
 def error_function_GS_facNew(params_facNew, activation_thresholds, components_Go, data_onsets, data_rates):
     print "Trying with value: " + str(params_facNew)
     fac_i, inhib_tonic, t = components_Go
+    if params_facNew[1] < 0:
+        params_facNew[1] = 0.01
+        print "Fixing SD value to greater than zero"
     fac_i_new = trials_facNew.gaussian("cuda", params_facNew, components_Go[0], n_rep=100000, dtype=np.float32)
     ###fac_i_new = get_trials_facNew(params_facNew, components_Go[0], t)
-    pred_onsets, pred_rates = get_emg_onsets_offsets(t, fac_i_new, activation_thresholds)
+    pred_onsets, pred_rates, pred_offsets = get_emg_onsets_offsets(t, fac_i_new, activation_thresholds)
     X2_onsets = get_chisquare(data_onsets, pred_onsets, nbins=2)[0]
     print "X2_onsets: ", X2_onsets
     X2_rates = get_chisquare(data_rates, pred_rates, nbins=2)[0]
     print "X2_rates: ", X2_rates
     X2_summed_facNew = X2_onsets + X2_rates
-    print "X2_summed: ", X2_summed_facNew
+    sys.stdout.write("X2_summed: " + str(X2_summed_facNew))
+    sys.stdout.flush()
     return X2_summed_facNew
 
 #%%
@@ -332,32 +338,33 @@ data_GS = exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_thre
 
 #%%
  #optomizing parameters for Go trial baseline facilitation curve and tonic inhibition level
-if __name__ == "__main__":
-    params_Go = [1.5, 0.1, 0.03, 0.01, 0.05, 0.01, 1.5, 0.3] # starting parameters A = [2, 0.2, 0.01, 0.02, 0.12, 0.01, 1.5, 0.3], B = [1.5, 0.1, 0.03, 0.01, 0.05, 0.01, 1.5, 0.3] # [2, 0.2, 0.01, 0.02, 0.12, 0.01, 1.5, 0.3] values for a_facGo_mean, a_facGo_sd, b_facGo_mean, b_facGo_sd, c_facGo_mean, c_facGo_sd, inhib_mean, inhib_sd - old starting point [0.06, 0.4, 0.1, 2, 1, 0.2]
-    optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim, sim_data_Go_EMG_offsets), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])
-    print "ParamsOptimizedGo", optGo # returns array of parameter values when optimization terminated successfully
-    ####optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
-##optomizing parameters for GS trial activation threshold and single-component facilitation curve
-## setting Go trial params as those that gave lowest summed chi-square from cluster runs of just Go trials
-#    params_Go = [2.63997838, 0.0340372, 0.00687474, 0.01360539, 0.06377196, 0.0105061, 1.8365329, 0.32276946] #optGo.x #[0.004, 0.19, 0.02, 1.45, 1.61, 0.14] # output from Go optimization function
+#if __name__ == "__main__":
+##    params_Go = [1.5, 0.1, 0.01, 0.01, 0.05, 0.01, 1.5, 0.3] # starting parameters A = [2, 0.2, 0.01, 0.02, 0.12, 0.01, 1.5, 0.3], B = [1.5, 0.1, 0.01, 0.01, 0.05, 0.01, 1.5, 0.3] C = [2, 0.1, 0.01, 0.01, 0.12, 0.01, 1.5, 0.3] # [2, 0.2, 0.01, 0.02, 0.12, 0.01, 1.5, 0.3] values for a_facGo_mean, a_facGo_sd, b_facGo_mean, b_facGo_sd, c_facGo_mean, c_facGo_sd, inhib_mean, inhib_sd - old starting point [0.06, 0.4, 0.1, 2, 1, 0.2]
+##    optGo = opt.minimize(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim, sim_data_Go_EMG_offsets), method='Nelder-Mead', tol=0.01) # trying tolerance to 3 dp. method="SLSQP", bounds=[(0,None),(0,None),(0,None),(None,None)])
+##    print "ParamsOptimizedGo", optGo # returns array of parameter values when optimization terminated successfully
+#    ####optGo = opt.fmin(error_function_Go, params_Go, args=(exp_MEPs_150, exp_MEPs_125, exp_MEPs_100, exp_EMG_onsets_three_stim), xtol=0.001, ftol=0.01) # testing scipy.optimize.fmin to set tolerances
+###optomizing parameters for GS trial activation threshold and single-component facilitation curve
+### setting Go trial params as those that gave lowest summed chi-square from cluster runs of just Go trials
+#    params_Go = [2.57619299, 0.05308114, 0.00640317, 0.00782825, 0.06399041, 0.01087128, 1.79788944, 0.24566962] #optGo.x #[0.004, 0.19, 0.02, 1.45, 1.61, 0.14] # output from Go optimization function
 #    fac_i, inhib_tonic, t = trials.gaussian("cuda", params_Go, n_rep=100000, dtype=np.float32) # generate baseline Go fac curves from parameters already optimized
 #    components_Go = (fac_i, inhib_tonic, t)
-#    params_GS = [2.5, 0.04, 0.16, 0.02] # [1.2, 0.8, 0.2, 0.02] values for k_inhib, tau_inhib, step_t_mean, step_t_sd
+#    params_GS = [2.5, 0.04, 0.16, 0.02]  # C = [1.6, 0.1, 0.1, 0.02], D = [2.5, 0.04, 0.16, 0.02] ## [1.2, 0.8, 0.2, 0.02] values for k_inhib, tau_inhib, step_t_mean, step_t_sd
 #    optGS  = opt.minimize(error_function_GS, params_GS, args=(components_Go, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25, exp_GS_EMG_onsets_three_stim), method='Nelder-Mead', tol=0.01)
 #    print "ParamsOptimizedGS", optGS
 
 # optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')
 #%%
-def build_facNew():
-    params_Go = [2.63997838, 0.0340372, 0.00687474, 0.01360539, 0.06377196, 0.0105061, 1.8365329, 0.32276946] #[0.004, 0.19, 0.02, 1.69, 1.57, 0.31] # what optimized previously
+if __name__ == "__main__":
+#    def build_facNew():
+    params_Go = [2.57619299, 0.05308114, 0.00640317, 0.00782825, 0.06399041, 0.01087128, 1.79788944, 0.24566962] #[0.004, 0.19, 0.02, 1.69, 1.57, 0.31] # what optimized previously
     fac_i, inhib_tonic, t = trials.gaussian("cuda", params_Go, n_rep=100000, dtype=np.float32)
     components_Go = (fac_i, inhib_tonic, t)
-    pred_onsets, pred_rates = get_emg_onsets_facNew(t, fac_i, inhib_tonic) # don't have EMG offsets to use for GS trials
+    pred_onsets, pred_rates, pred_offsets = get_emg_onsets_offsets(t, fac_i, inhib_tonic) # don't have EMG offsets to use for GS trials
     sim_data_GS_rates = np.multiply(pred_rates, 1.2) # experimentally know GS rates 1.2X Go rates - but absolute values of experimental onsets won't fit
-    params_GS = [2.22182888, 0.07801492, 0.13543541, 0.01810237] #[1.76, 0.18, 0.21, 0.01] # what optimized previously
+    params_GS = [1.88698162, 0.05998707, 0.13339161, 0.01796852]  #[1.76, 0.18, 0.21, 0.01] # what optimized previously
     activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS)
-    params_facNew = [0.007, 0.005] #[0.002] # params for pre_t_sd_new - k_facNew, tau_facNew same as in params_Go
-    optFacNew = opt.minimize(error_function_GS_facNew, params_facNew, args=(activation_thresholds, components_Go, exp_GS_EMG_onsets_three_stim, sim_data_GS_rates), method='Nelder-Mead', tol=0.01)
+    params_facNew = [0.1, 0.02] #[0.002] # params for pre_t_sd_new - k_facNew, tau_facNew same as in params_Go
+    optFacNew = opt.minimize(error_function_GS_facNew, params_facNew, args=(activation_thresholds, components_Go, exp_GS_EMG_onsets_three_stim, sim_data_GS_rates), method='Nelder-Mead', tol=0.01) # bounds=((-0.4, 0.2), (0.001, None)), for L-BFGS-B method
     print "ParamsOptimizedGSFacNew", optFacNew
 
 

@@ -1,3 +1,4 @@
+#<<<<<<< HEAD
 # -*- coding: utf-8 -*-
 """
 Created on Wed Jul 22 16:37:43 2015
@@ -5,6 +6,8 @@ Created on Wed Jul 22 16:37:43 2015
 separate file that Sina created as part of cuda code for cluster
 """
 
+#=======
+#>>>>>>> b9612237e5d74812ec37d9cec32ba21eb9636bdc
 import numpy as np
 from timeit import default_timer as time
 import sys
@@ -145,6 +148,10 @@ def gaussian(method, params, n_rep=DEFAULT_TRIALS, compare=None, dtype=np.float3
 	method, compare can be : "original", "parallel_base", "cuda"	
 	dtype float32 is faster for GPU but has lower precision
 	dtype float64 is faster for CPU
+<<<<<<< HEAD
+=======
+
+>>>>>>> b9612237e5d74812ec37d9cec32ba21eb9636bdc
 	"""
 
 	# expand params
@@ -231,4 +238,8 @@ def gaussian(method, params, n_rep=DEFAULT_TRIALS, compare=None, dtype=np.float3
 		print "Speed up: %.3f x" %(tps[0]/tps[1]) # method / compare
 		print "Results close enough? ", close
 
+#<<<<<<< HEAD
 	return fac1, inhib_tonic, t
+#=======
+	return fac1, inhib_tonic, t
+#>>>>>>> b9612237e5d74812ec37d9cec32ba21eb9636bdc

@@ -92,7 +92,7 @@ def get_inhib_increase(t, inhib_tonic, params_GS):
     return inhib
 
 #%%
-def get_trials(params, n_rep=10000):  # change back to 100000 once finalized or on cluster
+def get_trials(params, n_rep=100000):  # change back to 100000 once finalized or on cluster
     '''
     Generates n_rep number of Guassian facilitation curves for Go response for all simulated trials required
     
@@ -128,7 +128,7 @@ def get_trials(params, n_rep=10000):  # change back to 100000 once finalized or 
     return fac_i, inhib_tonic, t
 
 #%% 
-def get_trials_facNew(params_facNew, facBimanual, t, n_rep=10000): # increase n_rep once finalized
+def get_trials_facNew(params_facNew, facBimanual, t, n_rep=100000): # increase n_rep once finalized
     a_facGo_mean = 2.6
     a_facGo_sd = 0.03 
     b_facGo_mean, b_facGo_sd = params_facNew
@@ -147,7 +147,7 @@ def get_trials_facNew(params_facNew, facBimanual, t, n_rep=10000): # increase n_
     return fac_i_new
 
 #%%
-def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=10000): # change back to 100000 once finalized
+def get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=100000): # change back to 100000 once finalized
     '''
     '''
     k_inhib, tau_inhib, step_t_mean, step_t_sd = params_GS
@@ -408,54 +408,61 @@ if __name__ == "__main__":
 # optGS  = opt.minimize(error_function_GS, params_GS, args=(params0, exp_GS_MEPs_75, exp_GS_MEPs_50, exp_GS_MEPs_25), method='Nelder-Mead')    
 #%%
 def build_facNew():
-    params_Go = [2.63997838, 0.0340372, 0.00687474, 0.01360539, 0.06377196, 0.0105061, 1.8365329, 0.32276946] #[0.004, 0.19, 0.02, 1.69, 1.57, 0.31] # what optimized previously
+    params_Go = [2.57619299, 0.05308114, 0.00640317, 0.00782825, 0.06399041, 0.01087128, 1.79788944, 0.24566962] #[0.004, 0.19, 0.02, 1.69, 1.57, 0.31] # what optimized previously
     fac_i, inhib_tonic, t = get_trials(params_Go)
     components_Go = (fac_i, inhib_tonic, t)
-    pred_onsets, pred_rates = get_emg_onsets_facNew(t, fac_i, inhib_tonic) # don't have EMG offsets to use for GS trials
+    pred_onsets, pred_rates, pred_offsets = get_emg_onsets_offsets(t, fac_i, inhib_tonic) # don't have EMG offsets to use for GS trials
     sim_data_GS_rates = np.multiply(pred_rates, 1.2) # experimentally know GS rates 1.2X Go rates - but absolute values of experimental onsets won't fit
-    params_GS = [2.22182888, 0.07801492, 0.13543541, 0.01810237] #[1.76, 0.18, 0.21, 0.01] # what optimized previously
+    params_GS = [1.88698162, 0.05998707, 0.13339161, 0.01796852] #[1.76, 0.18, 0.21, 0.01] # what optimized previously
     activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS)
-    params_facNew = [0.02, 0.005] #[0.002] # params for pre_t_sd_new - k_facNew, tau_facNew same as in params_Go 
+    params_facNew = [0.2, 0.05] #[0.002] # params for pre_t_sd_new - k_facNew, tau_facNew same as in params_Go 
     optFacNew = opt.minimize(error_function_GS_facNew, params_facNew, args=(activation_thresholds, components_Go, exp_GS_EMG_onsets_three_stim, sim_data_GS_rates), method='Nelder-Mead', tol=0.01)
     print "ParamsOptimizedGSFacNew", optFacNew
 
 
 #%%    
     # Values for params_Go and params_GS should come from cluster output
-    # params_Go = [0.004, 0.19, 0.02, 1.69, 1.57, 0.31] from cluster_run2_sb.txt
+    # params_Go = [ 2.57619299,  0.05308114,  0.00640317,  0.00782825,  0.06399041, 0.01087128,  1.79788944,  0.24566962] from cluster_gauss_run_37.txt
     # params_GS = [1.76, 0.18, 0.21, 0.01] from cluster_run3_GS_only.txt
 def visualize_params(params_Go, data_Go):  # visualizes fac curves and tonic inhibition on Go trials
     mep150, mep125, mep100, emg_onset, emg_offsets = data_Go
     fac_i, inhib_tonic, t = get_trials(params_Go, n_rep=100)
     plt.plot(t, fac_i.T, 'k-', alpha=0.4)
     plt.plot(t, inhib_tonic.T, color='r')
-    plt.plot(np.ones_like(mep150) * -0.15,  mep150, 'rx')
-    plt.plot(np.ones_like(mep125) * -0.125, mep125, 'rx')
-    plt.plot(np.ones_like(mep100) * -0.100, mep100, 'rx')
+#    plt.plot(np.ones_like(mep150) * -0.15,  mep150, 'rx')
+#    plt.plot(np.ones_like(mep125) * -0.125, mep125, 'rx')
+#    plt.plot(np.ones_like(mep100) * -0.100, mep100, 'rx')
     #inhib_tonic = params_Go[-2]
     
-    plt.plot(emg_onset, np.zeros_like(emg_onset), 'rx') #* inhib_tonic
+#    plt.plot(emg_onset, np.zeros_like(emg_onset), 'rx') #* inhib_tonic
     #plt.plot(emg_offsets, np.zeros_like(emg_offsets), 'rx')
 #%%    
 def visualize_params_GS(params_Go, params_GS, data_Go, data_GS):  # visualizes fac and inhibition on GS trials
-    mep150, mep125, mep100, emg_onset_Go = data_Go
+    mep150, mep125, mep100, emg_onset_Go, emg_offsets = data_Go
     mep75, mep50, mep25, emg_onset_GS = data_GS
     fac_i, inhib_tonic, t = get_trials(params_Go, n_rep=100)
     activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=100)
     #fig, ax = plt.subplots()
     plt.plot(t, fac_i.T, 'k-', alpha=0.4)
     plt.plot(t, activation_thresholds.T, color='r')
-    plt.plot(np.ones_like(mep150) * -0.15,  mep150, 'rx')
-    plt.plot(np.ones_like(mep125) * -0.125, mep125, 'rx')
-    plt.plot(np.ones_like(mep100) * -0.100, mep100, 'rx')
-    plt.plot(np.ones_like(mep75) * -0.075,  mep75, 'rx')
-    plt.plot(np.ones_like(mep50) * -0.05, mep50, 'rx')
-    plt.plot(np.ones_like(mep25) * -0.025, mep25, 'rx')
+#    plt.plot(np.ones_like(mep150) * -0.15,  mep150, 'rx')
+#    plt.plot(np.ones_like(mep125) * -0.125, mep125, 'rx')
+#    plt.plot(np.ones_like(mep100) * -0.100, mep100, 'rx')
+#    plt.plot(np.ones_like(mep75) * -0.075,  mep75, 'rx')
+#    plt.plot(np.ones_like(mep50) * -0.05, mep50, 'rx')
+#    plt.plot(np.ones_like(mep25) * -0.025, mep25, 'rx')
 #    #inhib_tonic = params_Go[-2]
 #    #plt.axhline(inhib_tonic, color='r')
 #    plt.plot(emg_onset_GS, np.zeros_like(emg_onset_GS), 'rx') #* params_Go[-2]
 #    #plt.plot(emg_onset_Go, np.zeros_like(emg_onset_Go) * params_Go[-2], 'rx')
-    return fac_i, activation_thresholds, t
+    #return fac_i, activation_thresholds, t
     
-    pred_onsets, pred_rates = get_emg_onsets_offsets(t, fac_i, activation_thresholds)
-    
+    pred_onsets, pred_rates, pred_offsets = get_emg_onsets_offsets(t, fac_i, activation_thresholds)
+#%%    
+# visualize traces for fac_new with unimanual response ontop of bimanual facilitation
+def visualize_params_GS_facNew(params_facNew, params_Go, params_GS):    
+    fac_i, inhib_tonic, t = get_trials(params_Go, n_rep=100)
+    activation_thresholds = get_activation_thresholds(t, inhib_tonic, params_GS, n_rep=100)
+    fac_i_new = get_trials_facNew(params_facNew, fac_i, t, n_rep = 100)
+    plt.plot(t, fac_i_new.T, 'k-', alpha=0.4)
+    #plt.plot(t, activation_thresholds.T, color='r')   
